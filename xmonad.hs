@@ -10,6 +10,7 @@ import XMonad.Hooks.StatusBar.PP
 
 import XMonad.Hooks.DynamicLog
 
+main :: IO()
 main = xmonad =<< xmobar myConfig
 
 myConfig :: XConfig (Choose Tall (Choose (Mirror Tall) Full))
