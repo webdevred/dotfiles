@@ -1,0 +1,7 @@
+* XMonad configuration
+
+This is my configuration, still simple.
+
+My goal is to create a good workflow for me to work with Emacs and Firefox.
+
+Another important thing is that I should be able to use Steam and play games without problems.
