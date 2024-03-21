@@ -1,0 +1,30 @@
+configuration {
+  modes: [ window, drun ];
+}
+
+@theme "/usr/share/rofi/themes/gruvbox-dark-hard.rasi"
+
+element.normal.normal,
+element.normal.urgent,
+element.normal.active,
+element.alternate.normal,
+element.alternate.urgent,
+element.alternate.active
+{
+text-color: #ffaaff;
+}
+
+element.selected.normal,
+element.selected.urgent,
+element.selected.active {
+text-color: #ff55ff;
+}
+
+element.selected.active, element.normal.active, element.alternate.active {
+background-color: #000000;
+}
+
+
+case-indicator, entry, prompt,button {
+text-color: #ffaaff;
+}
