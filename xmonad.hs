@@ -1,6 +1,6 @@
 -- a simple configuration
 
-import XMonad
+import XMonad hiding ((|||))
 import XMonad.Util.EZConfig
 import XMonad.Util.SpawnOnce
 
@@ -20,8 +20,12 @@ import XMonad.Layout.MultiToggle
 import XMonad.Layout.MultiToggle.Instances
 import qualified XMonad.StackSet as W
 import XMonad.Util.Loggers
+import XMonad.Layout.LayoutCombinators
+import XMonad.Layout.Hidden
+import XMonad.Layout.Named
 
 import System.IO (hPutStrLn)
+import Data.Char (toLower)
 
 import XMonad.Layout.LayoutModifier
 import XMonad.Hooks.DynamicLog
@@ -38,10 +42,11 @@ myXmobarPP :: PP
 myXmobarPP = def
     { ppSep             = pink " | "
     , ppTitleSanitize   = xmobarStrip
-    , ppCurrent         = wrap "(" ")"
+    , ppCurrent         = pink . wrap "(" ")"
     , ppVisible         = pink . wrap "<" ">"
     , ppHidden          = magenta
     , ppUrgent          = red . wrap (yellow "!") (yellow "!")
+    , ppLayout          = map toLower
     , ppOrder           = \[ws, l, _, wins] -> [ws, l, wins]
     , ppExtras          = [logTitles formatFocused formatUnfocused]
     }
@@ -50,7 +55,7 @@ myXmobarPP = def
     formatUnfocused = wrap "[" "]" . magenta . ppWindow
 
     ppWindow :: String -> String
-    ppWindow = xmobarRaw . (\w -> if null w then "untitled" else w) . shorten 30
+    ppWindow = map toLower . xmobarRaw . (\w -> if null w then "untitled" else w) . shorten 30
 
     pink, magenta, red, yellow :: String -> String
     magenta  = xmobarColor "#ff55ff" ""
@@ -78,14 +83,18 @@ myConfig = def
          ("M-c", spawn "caja"),
          ("M-x", spawn "rofi -show drun -config ~/.xmonad/rofi/config.rasi"),
          ("M-z", spawn "rofi -show window -config ~/.xmonad/rofi/config.rasi"),
+         ("M-f", sendMessage $ JumpToLayout "Full"),
+         ("M-S-b", sendMessage $ JumpToLayout "Big Master Tall"),
+         ("M-t", sendMessage $ JumpToLayout "Tall"),
          ("M-C-<Space>", namedScratchpadAction scratchpads "emacs-scratch"),
-         ("M-v", spawn ("echo \"" ++ help ++ "\" | xmessage -file -"))
+         ("M-C-h", spawn ("echo \"" ++ help ++ "\" | xmessage -file -"))
         ]
 
 myManageHook :: ManageHook
 myManageHook = composeAll
     [ className =? "mpv" --> (doFullFloat <+> doShift "1"),
-      className =? "discord" --> doShift "2"]
+      className =? "discord" --> doShift "2",
+      (className =? "steam" <&&> (not <$> title =? "Steam") --> doRectFloat (W.RationalRect 0.1 0.1 0.2 0.8))]
     <+> namedScratchpadManageHook scratchpads
 
 scratchpads :: [NamedScratchpad]
@@ -94,7 +103,10 @@ scratchpads = [NS "emacs-scratch" spawnEmacsScratch findEmacsScratch manageEmacs
         spawnEmacsScratch = "emacsclient -a='' -nc -F '(quote (name . \"emacs-scratch\"))'"
         manageEmacsScratch = nonFloating
 
-myLayouts = Tall 1 (1/2) (1/2) ||| Tall 1 (1/2) (2/3) ||| Full
+myLayouts =
+  (Tall 1 (1/2) (1/2))
+  ||| named "Big Master Tall" (Tall 1 (1/2) (2/3))
+  ||| Full
   
 
 myStartup = do
