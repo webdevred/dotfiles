@@ -36,24 +36,25 @@ main = do
 
 myXmobarPP :: PP
 myXmobarPP = def
-    { ppSep             = magenta " | "
+    { ppSep             = pink " | "
     , ppTitleSanitize   = xmobarStrip
     , ppCurrent         = wrap "(" ")"
-    , ppHidden          = wrap "" ""
+    , ppVisible         = pink . wrap "<" ">"
+    , ppHidden          = magenta
     , ppUrgent          = red . wrap (yellow "!") (yellow "!")
     , ppOrder           = \[ws, l, _, wins] -> [ws, l, wins]
     , ppExtras          = [logTitles formatFocused formatUnfocused]
     }
   where
-    formatFocused   = wrap "[" "]" . magenta . ppWindow
-    formatUnfocused = wrap "[" "]" . blue    . ppWindow
+    formatFocused   = wrap "[" "]" . pink    . ppWindow
+    formatUnfocused = wrap "[" "]" . magenta . ppWindow
 
     ppWindow :: String -> String
     ppWindow = xmobarRaw . (\w -> if null w then "untitled" else w) . shorten 30
 
-    blue, magenta, red, yellow :: String -> String
-    magenta  = xmobarColor "#ff79c6" ""
-    blue     = xmobarColor "#bd93f9" ""
+    pink, magenta, red, yellow :: String -> String
+    magenta  = xmobarColor "#ff55ff" ""
+    pink     = xmobarColor "#ffaaff" ""
     yellow   = xmobarColor "#f1fa8c" ""
     red      = xmobarColor "#ff5555" ""
 
