@@ -27,16 +27,36 @@ import XMonad.Layout.Named
 import System.IO (hPutStrLn)
 import Data.Char (toLower)
 
+import System.Directory (getHomeDirectory,doesFileExist)
+
 import XMonad.Layout.LayoutModifier
 import XMonad.Hooks.DynamicLog
 
 main :: IO()
 main = do
+  configLocation <- determineConfigLocation
   xmonad
     . ewmhFullscreen
     . ewmh
-    . withEasySB (statusBarProp "xmobar ~/.xmonad/xmobar/config.hs" (pure myXmobarPP)) defToggleStrutsKey
-    $ myConfig
+    . withEasySB (statusBarProp ("xmobar "++ configLocation ++"/xmobar/config.hs") (pure myXmobarPP)) defToggleStrutsKey
+    $ myConfig configLocation
+
+determineConfigLocation :: IO FilePath
+determineConfigLocation = do
+  homeDirectory <- getHomeDirectory
+  inXmonad <- doesFileExist (homeDirectory ++ "/xmonad/xmonad.hs")
+  inDotXmonad <- doesFileExist (homeDirectory ++ "/.xmonad/xmonad.hs")
+  inDotConfigXmonad <- doesFileExist (homeDirectory ++ "/.config/xmonad/xmonad.hs")
+  if inXmonad then
+    return $ homeDirectory ++ "/xmonad"
+  else
+    if inDotXmonad then
+      return $ homeDirectory ++ "/.xmonad"
+    else
+      if inDotConfigXmonad then
+        return $ homeDirectory ++ "/.config/xmonad"
+      else
+        error "can not find config location"
 
 myXmobarPP :: PP
 myXmobarPP = def
@@ -66,7 +86,8 @@ myXmobarPP = def
 
 -- myXmobarPP = def xmobarPP {ppOrder  = \(ws:l:t:_) -> [ws] }
 
-myConfig = def
+myConfig configLocation = 
+  def
        { borderWidth        = 7
        , terminal = "alacritty"
        , modMask = mod4Mask
