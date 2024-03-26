@@ -95,7 +95,7 @@ myConfig configLocation =
        , normalBorderColor  = "#ff55ff"
        , focusedBorderColor = "#ffaaff"
        , focusFollowsMouse = False
-       , startupHook = myStartup <+> startupHook def
+       , startupHook = (myStartup configLocation) <+> startupHook def
        , manageHook = myManageHook <+> manageHook def
        , layoutHook = avoidStruts $ smartBorders $ myLayouts
     }
@@ -130,5 +130,6 @@ myLayouts =
   ||| Full
   
 
-myStartup = do
-  spawnOnce "feh --bg-fill /mnt/HDD/bakgrund2.jpg /mnt/HDD/bakgrund.jpg"
+myStartup configLocation = do
+    spawnOnce ("picom --config="++ configLocation ++"/picom/picom.conf")
+    spawnOnce "feh --bg-fill /mnt/HDD/bakgrund2.jpg /mnt/HDD/bakgrund.jpg"
