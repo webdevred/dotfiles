@@ -36,10 +36,13 @@ import XMonad.Hooks.DynamicLog
 main :: IO()
 main = do
   configLocation <- determineConfigLocation
+  let myBars = xmobarStatusBar configLocation 0 "big_screen"
+          <> xmobarStatusBar configLocation 1 "small_screen_top"
+          <> xmobarStatusBar configLocation 1 "small_screen_bottom"
   xmonad
     . ewmhFullscreen
     . ewmh
-    . withEasySB (statusBarProp ("xmobar "++ configLocation ++"/xmobar/config.hs") (pure myXmobarPP)) defToggleStrutsKey
+    . withEasySB myBars defToggleStrutsKey
     $ myConfig configLocation
 
 determineConfigLocation :: IO FilePath
@@ -58,6 +61,10 @@ determineConfigLocation = do
         return $ homeDirectory ++ "/.config/xmonad"
       else
         error "can not find config location"
+
+xmobarStatusBar :: String -> Int -> String -> StatusBarConfig
+xmobarStatusBar configLocation screen bar = statusBarProp cmd $ pure myXmobarPP
+  where cmd =  "xmobar -x " ++ (show screen) ++ " " ++ configLocation ++"/xmobar/"++ bar ++"_config.hs"
 
 myXmobarPP :: PP
 myXmobarPP = def
@@ -103,8 +110,8 @@ myConfig configLocation =
        [ ("M-a", spawn "emacs-gtk"),
          ("M-s", spawn "flameshot launcher"),
          ("M-c", spawn "caja"),
-         ("M-x", spawn "rofi -show drun -config ~/.xmonad/rofi/config.rasi"),
-         ("M-z", spawn "rofi -show window -config ~/.xmonad/rofi/config.rasi"),
+         ("M-x", spawn $ "rofi -show drun -config " ++ configLocation ++ "/rofi/config.rasi"),
+         ("M-z", spawn $ "rofi -show window -config " ++ configLocation ++ "/rofi/config.rasi"),
          ("M-S-f", sendMessage $ JumpToLayout "Full"),
          ("M-S-b", sendMessage $ JumpToLayout "Big Master Tall"),
          ("M-S-t", sendMessage $ JumpToLayout "Tall"),

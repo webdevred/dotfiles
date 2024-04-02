@@ -4,7 +4,7 @@ Config { font = "DejaVu Sans Mono 10"
        , bgColor = "black"
        , fgColor = "#ffaaff"
        , alpha = 128
-       , position = Top
+       , position = Bottom
        , textOffset = -1
        , iconOffset = -1
        , lowerOnStart = True
@@ -15,13 +15,8 @@ Config { font = "DejaVu Sans Mono 10"
        , allDesktops = True
        , overrideRedirect = True
        , textOutputFormat = Ansi
-       , commands = [ Run Cpu ["-L","3","-H","50", "--normal","green","--high","red"] 10
-                    , Run Memory ["-t","Mem: <usedratio>%"] 10
-                    , Run Date "%a %b %_d %Y %H:%M:%S" "date" 10
-                    , Run XMonadLog
-                    ]
        , sepChar = "%"
        , alignSep = "}{"
-       , template = "%XMonadLog% }\
-                    \{ %memory% | %cpu% | %date%"
+       , commands = [Run XMonadLog]
+       , template = "%XMonadLog%"
        }
