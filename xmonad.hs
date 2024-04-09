@@ -115,14 +115,18 @@ myConfig configLocation =
          ("M-S-f", sendMessage $ JumpToLayout "Full"),
          ("M-S-b", sendMessage $ JumpToLayout "Big Master Tall"),
          ("M-S-t", sendMessage $ JumpToLayout "Tall"),
-         ("M-C-<Space>", namedScratchpadAction scratchpads "emacs-scratch")
+         ("M-C-<Space>", namedScratchpadAction scratchpads "emacs-scratch"),
+         ("M-S-s", spawnSelected' myApplications )
         ]
+
+spawnSelected' :: [(String, String)] -> X ()
+spawnSelected' lst = gridselect def lst >>= flip whenJust spawn
 
 myManageHook :: ManageHook
 myManageHook = composeAll
     [ className =? "mpv" --> (doFullFloat <+> doShift "1"),
       className =? "discord" --> doShift "2",
-      (className =? "steam" <&&> (not <$> title =? "Steam") --> doRectFloat (W.RationalRect 0.1 0.1 0.2 0.8))]
+      className =? "steam" <&&> (not <$> title =? "Steam") --> doRectFloat (W.RationalRect 0.1 0.1 0.2 0.8)]
     <+> namedScratchpadManageHook scratchpads
 
 scratchpads :: [NamedScratchpad]
