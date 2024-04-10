@@ -99,6 +99,7 @@ myApplications =
   , ("Discord", "discord")
   , ("Emacs", "emacs-gtk")
   , ("Firefox", "firefox")
+  , ("Flameshot", "flameshot launcher")
   , ("GIMP", "gimp")
   , ("Steam", "steam")
   , ("Terminal", myTerminal)
