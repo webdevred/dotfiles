@@ -1,5 +1,4 @@
 -- a simple configuration
-
 import XMonad hiding ((|||))
 import XMonad.Util.EZConfig
 import XMonad.Util.SpawnOnce
@@ -8,139 +7,156 @@ import XMonad.Hooks.DynamicLog
 import XMonad.Hooks.StatusBar
 import XMonad.Hooks.StatusBar.PP
 
-import XMonad.Hooks.ManageHelpers
-import XMonad.Layout.NoBorders
 import XMonad.Hooks.EwmhDesktops
-import XMonad.Hooks.ManageDocks 
-import XMonad.Util.NamedScratchpad
-import XMonad.Util.Run (spawnPipe)
-import XMonad.Layout.Fullscreen  
+import XMonad.Hooks.ManageDocks
+import XMonad.Hooks.ManageHelpers
+import XMonad.Layout.Fullscreen
+import XMonad.Layout.Hidden
+import XMonad.Layout.LayoutCombinators
 import XMonad.Layout.LayoutModifier
-import XMonad.Layout.MultiToggle 
+import XMonad.Layout.MultiToggle
 import XMonad.Layout.MultiToggle.Instances
+import XMonad.Layout.Named
+import XMonad.Layout.NoBorders
+import XMonad.Layout.Spacing
 import qualified XMonad.StackSet as W
 import XMonad.Util.Loggers
-import XMonad.Layout.LayoutCombinators
-import XMonad.Layout.Hidden
-import XMonad.Layout.Named
-import XMonad.Layout.Spacing
+import XMonad.Util.NamedScratchpad
+import XMonad.Util.Run (spawnPipe)
 
-import System.IO (hPutStrLn)
 import Data.Char (toLower)
+import System.IO (hPutStrLn)
 
-import System.Directory (getHomeDirectory,doesFileExist)
+import System.Directory (doesFileExist, getHomeDirectory)
 
-import XMonad.Layout.LayoutModifier
-import XMonad.Hooks.DynamicLog
+import XMonad.Actions.GridSelect
 
-main :: IO()
+main :: IO ()
 main = do
   configLocation <- determineConfigLocation
-  let myBars = xmobarStatusBar configLocation 0 "big_screen"
-          <> xmobarStatusBar configLocation 1 "small_screen_top"
-          <> xmobarStatusBar configLocation 1 "small_screen_bottom"
-  xmonad
-    . ewmhFullscreen
-    . ewmh
-    . withEasySB myBars defToggleStrutsKey
-    $ myConfig configLocation
+  let myBars =
+        xmobarStatusBar configLocation 0 "big_screen" <>
+        xmobarStatusBar configLocation 1 "small_screen_top" <>
+        xmobarStatusBar configLocation 1 "small_screen_bottom"
+  xmonad . ewmhFullscreen . ewmh . withEasySB myBars defToggleStrutsKey $
+    myConfig configLocation
 
 determineConfigLocation :: IO FilePath
 determineConfigLocation = do
   homeDirectory <- getHomeDirectory
   inXmonad <- doesFileExist (homeDirectory ++ "/xmonad/xmonad.hs")
   inDotXmonad <- doesFileExist (homeDirectory ++ "/.xmonad/xmonad.hs")
-  inDotConfigXmonad <- doesFileExist (homeDirectory ++ "/.config/xmonad/xmonad.hs")
-  if inXmonad then
-    return $ homeDirectory ++ "/xmonad"
-  else
-    if inDotXmonad then
-      return $ homeDirectory ++ "/.xmonad"
-    else
-      if inDotConfigXmonad then
-        return $ homeDirectory ++ "/.config/xmonad"
-      else
-        error "can not find config location"
+  inDotConfigXmonad <-
+    doesFileExist (homeDirectory ++ "/.config/xmonad/xmonad.hs")
+  if inXmonad
+    then return $ homeDirectory ++ "/xmonad"
+    else if inDotXmonad
+           then return $ homeDirectory ++ "/.xmonad"
+           else if inDotConfigXmonad
+                  then return $ homeDirectory ++ "/.config/xmonad"
+                  else error "can not find config location"
 
 xmobarStatusBar :: String -> Int -> String -> StatusBarConfig
 xmobarStatusBar configLocation screen bar = statusBarProp cmd $ pure myXmobarPP
-  where cmd =  "xmobar -x " ++ (show screen) ++ " " ++ configLocation ++"/xmobar/"++ bar ++"_config.hs"
+  where
+    cmd =
+      "xmobar -x" ++
+      show screen ++ " " ++ configLocation ++ "/xmobar/" ++ bar ++ "_config.hs"
+
+untitledIfNull :: String -> String
+untitledIfNull "" = "untitled"
+untitledIfNull v = v
 
 myXmobarPP :: PP
-myXmobarPP = def
-    { ppSep             = pink " | "
-    , ppTitleSanitize   = xmobarStrip
-    , ppCurrent         = pink . wrap "(" ")"
-    , ppVisible         = pink . wrap "<" ">"
-    , ppHidden          = magenta
-    , ppUrgent          = red . wrap (yellow "!") (yellow "!")
-    , ppLayout          = map toLower
-    , ppOrder           = \[ws, l, _, wins] -> [ws, l, wins]
-    , ppExtras          = [logTitles formatFocused formatUnfocused]
+myXmobarPP =
+  def
+    { ppSep = pink " | "
+    , ppTitleSanitize = xmobarStrip
+    , ppCurrent = pink . wrap "(" ")"
+    , ppVisible = pink . wrap "<" ">"
+    , ppHidden = magenta
+    , ppUrgent = red . wrap (yellow "!") (yellow "!")
+    , ppLayout = map toLower
+    , ppOrder = \[ws, l, _, wins] -> [ws, l, wins]
+    , ppExtras = [logTitles formatFocused formatUnfocused]
     }
   where
-    formatFocused   = wrap "[" "]" . pink    . ppWindow
+    formatFocused = wrap "[" "]" . pink . ppWindow
     formatUnfocused = wrap "[" "]" . magenta . ppWindow
-
-    ppWindow :: String -> String
-    ppWindow = map toLower . xmobarRaw . (\w -> if null w then "untitled" else w) . shorten 30
-
+    ppWindow = map toLower . xmobarRaw . shorten 30 . untitledIfNull
     pink, magenta, red, yellow :: String -> String
-    magenta  = xmobarColor "#ff55ff" ""
-    pink     = xmobarColor "#ffaaff" ""
-    yellow   = xmobarColor "#f1fa8c" ""
-    red      = xmobarColor "#ff5555" ""
+    magenta = xmobarColor "#ff55ff" ""
+    pink = xmobarColor "#ffaaff" ""
+    yellow = xmobarColor "#f1fa8c" ""
+    red = xmobarColor "#ff5555" ""
 
+myTerminal :: String
+myTerminal = "alacritty"
 
--- myXmobarPP = def xmobarPP {ppOrder  = \(ws:l:t:_) -> [ws] }
+myApplications :: [(String, String)]
+myApplications =
+  [ ("Caja", "caja")
+  , ("Discord", "discord")
+  , ("Emacs", "emacs-gtk")
+  , ("Firefox", "firefox")
+  , ("GIMP", "gimp")
+  , ("Steam", "steam")
+  , ("Terminal", myTerminal)
+  ]
 
-myConfig configLocation = 
+runRofi :: MonadIO m => String -> String -> m ()
+runRofi rofiType configLocation =
+  spawn
+    ("rofi -show " ++
+     rofiType ++ " -config " ++ configLocation ++ "/rofi/config.rasi")
+
+myConfig configLocation =
   def
-       { borderWidth        = 7
-       , terminal = "alacritty"
-       , modMask = mod4Mask
-       , normalBorderColor  = "#ff55ff"
-       , focusedBorderColor = "#ffaaff"
-       , focusFollowsMouse = False
-       , startupHook = (myStartup configLocation) <+> startupHook def
-       , manageHook = myManageHook <+> manageHook def
-       , layoutHook = avoidStruts $ smartBorders $ myLayouts
-    }
-     `additionalKeysP`
-       [ ("M-a", spawn "emacs-gtk"),
-         ("M-s", spawn "flameshot launcher"),
-         ("M-c", spawn "caja"),
-         ("M-x", spawn $ "rofi -show drun -config " ++ configLocation ++ "/rofi/config.rasi"),
-         ("M-z", spawn $ "rofi -show window -config " ++ configLocation ++ "/rofi/config.rasi"),
-         ("M-S-f", sendMessage $ JumpToLayout "Full"),
-         ("M-S-b", sendMessage $ JumpToLayout "Big Master Tall"),
-         ("M-S-t", sendMessage $ JumpToLayout "Tall"),
-         ("M-C-<Space>", namedScratchpadAction scratchpads "emacs-scratch"),
-         ("M-S-s", spawnSelected' myApplications )
-        ]
+    { borderWidth = 7
+    , terminal = myTerminal
+    , modMask = mod4Mask
+    , normalBorderColor = "#ff55ff"
+    , focusedBorderColor = "#ffaaff"
+    , focusFollowsMouse = False
+    , startupHook = myStartup configLocation <+> startupHook def
+    , manageHook = myManageHook <+> manageHook def
+    , layoutHook = avoidStruts $ smartBorders myLayouts
+    } `additionalKeysP`
+  [ ("M-s", spawnSelected' myApplications)
+  , ("M-x", runRofi "drun" configLocation)
+  , ("M-z", runRofi "window" configLocation)
+  , ("M-S-f", sendMessage $ JumpToLayout "Full")
+  , ("M-S-b", sendMessage $ JumpToLayout "Big Master Tall")
+  , ("M-S-t", sendMessage $ JumpToLayout "Tall")
+  , ("M-C-<Space>", namedScratchpadAction scratchpads "emacs-scratch")
+  ]
 
 spawnSelected' :: [(String, String)] -> X ()
 spawnSelected' lst = gridselect def lst >>= flip whenJust spawn
 
 myManageHook :: ManageHook
-myManageHook = composeAll
-    [ className =? "mpv" --> (doFullFloat <+> doShift "1"),
-      className =? "discord" --> doShift "2",
-      className =? "steam" <&&> (not <$> title =? "Steam") --> doRectFloat (W.RationalRect 0.1 0.1 0.2 0.8)]
-    <+> namedScratchpadManageHook scratchpads
+myManageHook =
+  composeAll
+    [ className =? "mpv" --> (doFullFloat <+> doShift "1")
+    , className =? "discord" --> doShift "2"
+    , className =? "steam" <&&> (not <$> title =? "Steam") -->
+      doRectFloat (W.RationalRect 0.1 0.1 0.2 0.8)
+    ] <+>
+  namedScratchpadManageHook scratchpads
 
 scratchpads :: [NamedScratchpad]
-scratchpads = [NS "emacs-scratch" spawnEmacsScratch findEmacsScratch manageEmacsScratch]
-  where findEmacsScratch = title =? "emacs-scratch"
-        spawnEmacsScratch = "emacsclient -a='' -nc -F '(quote (name . \"emacs-scratch\"))'"
-        manageEmacsScratch = nonFloating
+scratchpads =
+  [NS "emacs-scratch" spawnEmacsScratch findEmacsScratch manageEmacsScratch]
+  where
+    findEmacsScratch = title =? "emacs-scratch"
+    spawnEmacsScratch =
+      "emacsclient -a='' -nc -F '(quote (name . \"emacs-scratch\"))'"
+    manageEmacsScratch = nonFloating
 
 myLayouts =
-  named "Tall" (spacing 10 $ Tall 1 (1/2) (1/2))
-  ||| named "Big Master Tall" (spacing 10 $ Tall 1 (1/2) (2/3))
-  ||| Full
-  
+  named "Tall" (spacing 10 $ Tall 1 (1 / 2) (1 / 2)) |||
+  named "Big Master Tall" (spacing 10 $ Tall 1 (1 / 2) (2 / 3)) ||| Full
 
 myStartup configLocation = do
-    spawnOnce ("picom --config="++ configLocation ++"/picom/picom.conf")
-    spawnOnce "feh --bg-fill /mnt/HDD/bakgrund2.jpg /mnt/HDD/bakgrund.jpg"
+  spawnOnce ("picom --config=" ++ configLocation ++ "/picom/picom.conf")
+  spawnOnce "feh --bg-fill /mnt/HDD/bakgrund2.jpg /mnt/HDD/bakgrund.jpg"
