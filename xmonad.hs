@@ -1,6 +1,5 @@
 -- a simple configuration
 import XMonad hiding ((|||))
-import XMonad.Util.EZConfig
 import XMonad.Util.SpawnOnce
 
 import XMonad.Hooks.DynamicLog
@@ -24,8 +23,11 @@ import XMonad.Util.Loggers
 import XMonad.Util.NamedScratchpad
 import XMonad.Util.Run (spawnPipe)
 
-import Data.Char (toLower)
+import Data.Char (isAscii, ord, toLower)
 import System.IO (hPutStrLn)
+
+import qualified Data.Map as Map
+import Data.Map (Map)
 
 import System.Directory (doesFileExist, getHomeDirectory)
 
@@ -83,7 +85,8 @@ myXmobarPP =
   where
     formatFocused = wrap "[" "]" . pink . ppWindow
     formatUnfocused = wrap "[" "]" . magenta . ppWindow
-    ppWindow = map toLower . xmobarRaw . shorten 30 . untitledIfNull
+    ppWindow =
+      map toLower . xmobarRaw . shorten 30 . excludeEmojis . untitledIfNull
     pink, magenta, red, yellow :: String -> String
     magenta = xmobarColor "#ff55ff" ""
     pink = xmobarColor "#ffaaff" ""
@@ -111,6 +114,37 @@ runRofi rofiType configLocation =
     ("rofi -show " ++
      rofiType ++ " -config " ++ configLocation ++ "/rofi/config.rasi")
 
+excludeEmojis :: String -> String
+excludeEmojis = filter isEmoji
+  where
+    emojiRanges =
+      [ (0x1F600, 0x1F64F) -- Emoticons
+      , (0x1F300, 0x1F5FF) -- Miscellaneous Symbols and Pictographs
+      , (0x1F680, 0x1F6FF) -- Transport and Map Symbols
+      , (0x1F1E6, 0x1F1FF) -- Regional Indicator Symbols
+      ]
+    isEmoji :: Char -> Bool
+    isEmoji c =
+      not (any (\(start, end) -> ord c >= start && ord c <= end) emojiRanges)
+
+switchToLayout :: String -> X ()
+switchToLayout = sendMessage . JumpToLayout
+
+myKeys :: String -> XConfig Layout -> Map (ButtonMask, KeySym) (X ())
+myKeys configLocation conf@(XConfig {modMask = modm}) =
+  Map.union
+    (Map.fromList
+       [ ((modm, xK_s), spawnSelected' myApplications)
+       , ((modm, xK_x), runRofi "drun" configLocation)
+       , ((modm, xK_z), runRofi "window" configLocation)
+       , ((modm .|. shiftMask, xK_f), switchToLayout "Full")
+       , ((modm .|. shiftMask, xK_b), switchToLayout "Big Master Tall")
+       , ((modm .|. shiftMask, xK_t), switchToLayout "Tall")
+       , ( (modm .|. shiftMask, xK_space)
+         , namedScratchpadAction scratchpads "emacs-scratch")
+       ]) $
+  keys def conf
+
 myConfig configLocation =
   def
     { borderWidth = 7
@@ -122,15 +156,8 @@ myConfig configLocation =
     , startupHook = myStartup configLocation <+> startupHook def
     , manageHook = myManageHook <+> manageHook def
     , layoutHook = avoidStruts $ smartBorders myLayouts
-    } `additionalKeysP`
-  [ ("M-s", spawnSelected' myApplications)
-  , ("M-x", runRofi "drun" configLocation)
-  , ("M-z", runRofi "window" configLocation)
-  , ("M-S-f", sendMessage $ JumpToLayout "Full")
-  , ("M-S-b", sendMessage $ JumpToLayout "Big Master Tall")
-  , ("M-S-t", sendMessage $ JumpToLayout "Tall")
-  , ("M-C-<Space>", namedScratchpadAction scratchpads "emacs-scratch")
-  ]
+    , keys = myKeys configLocation
+    }
 
 spawnSelected' :: [(String, String)] -> X ()
 spawnSelected' lst = gridselect def lst >>= flip whenJust spawn
