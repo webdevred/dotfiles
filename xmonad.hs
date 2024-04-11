@@ -23,7 +23,7 @@ import XMonad.Util.Loggers
 import XMonad.Util.NamedScratchpad
 import XMonad.Util.Run (spawnPipe)
 
-import Data.Char (isAscii, ord, toLower)
+import Data.Char (chr, isAscii, toLower)
 import System.IO (hPutStrLn)
 
 import qualified Data.Map as Map
@@ -125,7 +125,7 @@ excludeEmojis = filter isEmoji
       ]
     isEmoji :: Char -> Bool
     isEmoji c =
-      not (any (\(start, end) -> ord c >= start && ord c <= end) emojiRanges)
+      not (any (\(start, end) -> elem c [chr x | x <- [start..end]]) emojiRanges)
 
 switchToLayout :: String -> X ()
 switchToLayout = sendMessage . JumpToLayout
