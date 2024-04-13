@@ -1,5 +1,6 @@
 -- a simple configuration
 import XMonad hiding ((|||))
+import XMonad.Util.Run (runProcessWithInput)
 import XMonad.Util.SpawnOnce
 
 import XMonad.Hooks.DynamicLog
@@ -24,6 +25,7 @@ import XMonad.Util.NamedScratchpad
 import XMonad.Util.Run (spawnPipe)
 
 import Data.Char (chr, isAscii, toLower)
+import Data.List (isInfixOf, sortOn)
 import System.IO (hPutStrLn)
 
 import qualified Data.Map as Map
@@ -125,16 +127,45 @@ excludeEmojis = filter isEmoji
       ]
     isEmoji :: Char -> Bool
     isEmoji c =
-      not (any (\(start, end) -> elem c [chr x | x <- [start..end]]) emojiRanges)
+      not
+        (any (\(start, end) -> elem c [chr x | x <- [start .. end]]) emojiRanges)
 
 switchToLayout :: String -> X ()
 switchToLayout = sendMessage . JumpToLayout
+
+pairs :: [String] -> [(String, String)]
+pairs (namn:besk:rest) = (besk, namn) : pairs rest
+pairs _ = []
+
+audioGridCellWidth :: [(String, String)] -> Integer
+audioGridCellWidth =
+  (7 *) . fromIntegral . maximum . map (\(beskrivning, _) -> length beskrivning)
+
+audioGridSelect :: X ()
+audioGridSelect = do
+  output <- runProcessWithInput "pactl" ["list", "sinks"] ""
+  let sinks =
+        sortOn fst .
+        pairs .
+        map
+          (dropWhile (== ' ') .
+           drop 1 . dropWhile (/= ':') . dropWhile (`elem` " \t")) .
+        filter containsNamnOrBeskrivning . lines $
+        output
+  sinkMaybe <- gridselect def {gs_cellwidth = audioGridCellWidth sinks} sinks
+  case sinkMaybe of
+    Just sink -> spawn $ "pactl set-default-sink " ++ sink
+    Nothing -> return ()
+  where
+    containsNamnOrBeskrivning line =
+      isInfixOf "Namn" line || isInfixOf "Beskrivning" line
 
 myKeys :: String -> XConfig Layout -> Map (ButtonMask, KeySym) (X ())
 myKeys configLocation conf@(XConfig {modMask = modm}) =
   Map.union
     (Map.fromList
        [ ((modm, xK_s), spawnSelected' myApplications)
+       , ((modm, xK_p), audioGridSelect)
        , ((modm, xK_x), runRofi "drun" configLocation)
        , ((modm, xK_z), runRofi "window" configLocation)
        , ((modm .|. shiftMask, xK_f), switchToLayout "Full")
