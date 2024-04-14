@@ -28,6 +28,8 @@ import Data.Char (chr, isAscii, toLower)
 import Data.List (isInfixOf, sortOn)
 import System.IO (hPutStrLn)
 
+import Graphics.X11.ExtraTypes.XF86
+
 import qualified Data.Map as Map
 import Data.Map (Map)
 
@@ -139,7 +141,7 @@ pairs _ = []
 
 audioGridCellWidth :: [(String, String)] -> Integer
 audioGridCellWidth =
-  (7 *) . fromIntegral . maximum . map (\(beskrivning, _) -> length beskrivning)
+  (7 *) . toInteger . maximum . map (\(beskrivning, _) -> length beskrivning)
 
 audioGridSelect :: X ()
 audioGridSelect = do
@@ -171,6 +173,9 @@ myKeys configLocation conf@(XConfig {modMask = modm}) =
        , ((modm .|. shiftMask, xK_f), switchToLayout "Full")
        , ((modm .|. shiftMask, xK_b), switchToLayout "Big Master Tall")
        , ((modm .|. shiftMask, xK_t), switchToLayout "Tall")
+       , ((0, xF86XK_AudioRaiseVolume),  spawn "amixer -D pulse sset Master 10%+")
+       , ((0, xF86XK_AudioLowerVolume),  spawn "amixer -D pulse sset Master 10%-")
+       , ((0, xF86XK_AudioMute),         spawn "amixer -D pulse sset Master toggle")
        , ( (modm .|. shiftMask, xK_space)
          , namedScratchpadAction scratchpads "emacs-scratch")
        ]) $
