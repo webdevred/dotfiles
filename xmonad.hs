@@ -209,19 +209,25 @@ myGridNavigation =
       Map.fromList
         [ ((0, xK_Escape), cancel)
         , ((0, xK_Return), select)
-        , ((shiftMask, xK_7), substringSearch myGridNavigation)
-        , ((0, xK_Left), move (-1, 0) >> myGridNavigation)
-        , ((0, xK_h), move (-1, 0) >> myGridNavigation)
-        , ((0, xK_Right), move (1, 0) >> myGridNavigation)
-        , ((0, xK_l), move (1, 0) >> myGridNavigation)
-        , ((0, xK_Down), move (0, 1) >> myGridNavigation)
-        , ((0, xK_j), move (0, 1) >> myGridNavigation)
-        , ((0, xK_Up), move (0, -1) >> myGridNavigation)
-        , ((0, xK_y), move (-1, -1) >> myGridNavigation)
-        , ((0, xK_i), move (1, -1) >> myGridNavigation)
-        , ((0, xK_n), move (-1, 1) >> myGridNavigation)
-        , ((0, xK_m), move (1, -1) >> myGridNavigation)
         , ((0, xK_space), setPos (0, 0) >> myGridNavigation)
+        , ((shiftMask, xK_7), substringSearch myGridNavigation)
+        , ((0, xK_s), substringSearch myGridNavigation)
+        -- arrow keys
+        , ((0, xK_Left), move (-1, 0) >> myGridNavigation)
+        , ((0, xK_Right), move (1, 0) >> myGridNavigation)
+        , ((0, xK_Up), move (0, -1) >> myGridNavigation)
+        , ((0, xK_Down), move (0, 1) >> myGridNavigation)
+        -- h, j, k, l to move left, down, up and right
+        , ((0, xK_h), move (-1, 0) >> myGridNavigation)
+        , ((0, xK_j), move (0, 1) >> myGridNavigation)
+        , ((0, xK_k), move (0, -1) >> myGridNavigation)
+        , ((0, xK_l), move (1, 0) >> myGridNavigation)
+        --  y and  i to move left and right and up at the same time
+        , ((0, xK_u), move (-1, -1) >> myGridNavigation)
+        , ((0, xK_i), move (1, -1) >> myGridNavigation)
+        --  n and m to move left and right and down at the same time
+        , ((0, xK_n), move (-1, 1) >> myGridNavigation)
+        , ((0, xK_m), move (1, 1) >> myGridNavigation)
         ]
     -- The navigation handler ignores unknown key symbols
     navDefaultHandler = const myGridNavigation
