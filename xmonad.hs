@@ -256,8 +256,8 @@ scratchpads =
     manageEmacsScratch = nonFloating
 
 myLayouts =
-  named "Tall" (spacing 10 $ Tall 1 (1 / 2) (1 / 2)) |||
-  named "Big Master Tall" (spacing 10 $ Tall 1 (1 / 2) (2 / 3)) ||| Full
+  named "Tall" (spacing 10 $ Tall 1 (3 / 100) (1 / 2)) |||
+  named "Big Master Tall" (spacing 10 $ Tall 1 0 (2 / 3)) ||| Full
 
 myStartup configLocation = do
   spawnOnce ("picom --config=" ++ configLocation ++ "/picom/picom.conf")
