@@ -1,6 +1,5 @@
 -- a simple configuration
 import XMonad hiding ((|||))
-import XMonad.Util.Run (runProcessWithInput)
 import XMonad.Util.SpawnOnce
 
 import XMonad.Hooks.DynamicLog
@@ -22,7 +21,7 @@ import XMonad.Layout.Spacing
 import qualified XMonad.StackSet as W
 import XMonad.Util.Loggers
 import XMonad.Util.NamedScratchpad
-import XMonad.Util.Run (spawnPipe)
+import XMonad.Util.Run (runProcessWithInput, spawnPipe)
 
 import Data.Char (chr, isAscii, toLower)
 import Data.List (isInfixOf, sortOn)
@@ -154,7 +153,12 @@ audioGridSelect = do
            drop 1 . dropWhile (/= ':') . dropWhile (`elem` " \t")) .
         filter containsNamnOrBeskrivning . lines $
         output
-  sinkMaybe <- gridselect def {gs_cellwidth = audioGridCellWidth sinks} sinks
+      gridConfig =
+        def
+          { gs_navigate = myGridNavigation
+          , gs_cellwidth = audioGridCellWidth sinks
+          }
+  sinkMaybe <- gridselect gridConfig sinks
   case sinkMaybe of
     Just sink -> spawn $ "pactl set-default-sink " ++ sink
     Nothing -> return ()
@@ -173,9 +177,11 @@ myKeys configLocation conf@(XConfig {modMask = modm}) =
        , ((modm .|. shiftMask, xK_f), switchToLayout "Full")
        , ((modm .|. shiftMask, xK_b), switchToLayout "Big Master Tall")
        , ((modm .|. shiftMask, xK_t), switchToLayout "Tall")
-       , ((0, xF86XK_AudioRaiseVolume),  spawn "amixer -D pulse sset Master 10%+")
-       , ((0, xF86XK_AudioLowerVolume),  spawn "amixer -D pulse sset Master 10%-")
-       , ((0, xF86XK_AudioMute),         spawn "amixer -D pulse sset Master toggle")
+       , ( (0, xF86XK_AudioRaiseVolume)
+         , spawn "amixer -D pulse sset Master 10%+")
+       , ( (0, xF86XK_AudioLowerVolume)
+         , spawn "amixer -D pulse sset Master 10%-")
+       , ((0, xF86XK_AudioMute), spawn "amixer -D pulse sset Master toggle")
        , ( (modm .|. shiftMask, xK_space)
          , namedScratchpadAction scratchpads "emacs-scratch")
        ]) $
@@ -195,8 +201,34 @@ myConfig configLocation =
     , keys = myKeys configLocation
     }
 
+myGridNavigation :: TwoD a (Maybe a)
+myGridNavigation =
+  makeXEventhandler $ shadowWithKeymap navKeyMap navDefaultHandler
+  where
+    navKeyMap =
+      Map.fromList
+        [ ((0, xK_Escape), cancel)
+        , ((0, xK_Return), select)
+        , ((shiftMask, xK_7), substringSearch myGridNavigation)
+        , ((0, xK_Left), move (-1, 0) >> myGridNavigation)
+        , ((0, xK_h), move (-1, 0) >> myGridNavigation)
+        , ((0, xK_Right), move (1, 0) >> myGridNavigation)
+        , ((0, xK_l), move (1, 0) >> myGridNavigation)
+        , ((0, xK_Down), move (0, 1) >> myGridNavigation)
+        , ((0, xK_j), move (0, 1) >> myGridNavigation)
+        , ((0, xK_Up), move (0, -1) >> myGridNavigation)
+        , ((0, xK_y), move (-1, -1) >> myGridNavigation)
+        , ((0, xK_i), move (1, -1) >> myGridNavigation)
+        , ((0, xK_n), move (-1, 1) >> myGridNavigation)
+        , ((0, xK_m), move (1, -1) >> myGridNavigation)
+        , ((0, xK_space), setPos (0, 0) >> myGridNavigation)
+        ]
+    -- The navigation handler ignores unknown key symbols
+    navDefaultHandler = const myGridNavigation
+
 spawnSelected' :: [(String, String)] -> X ()
-spawnSelected' lst = gridselect def lst >>= flip whenJust spawn
+spawnSelected' lst =
+  gridselect def {gs_navigate = myGridNavigation} lst >>= flip whenJust spawn
 
 myManageHook :: ManageHook
 myManageHook =
