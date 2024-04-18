@@ -1,3 +1,6 @@
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
+
 -- a simple configuration
 import XMonad hiding ((|||))
 import XMonad.Util.SpawnOnce
@@ -23,8 +26,13 @@ import XMonad.Util.Loggers
 import XMonad.Util.NamedScratchpad
 import XMonad.Util.Run (runProcessWithInput, spawnPipe)
 
+import Data.Aeson
+import Data.Aeson.Types ()
+import Data.ByteString.Lazy ()
+import Data.String (fromString)
+
 import Data.Char (chr, isAscii, toLower)
-import Data.List (isInfixOf, sortOn)
+import Data.List (genericLength, isInfixOf, sortOn)
 import System.IO (hPutStrLn)
 
 import Graphics.X11.ExtraTypes.XF86
@@ -124,7 +132,7 @@ runRofi rofiType configLocation =
     ("rofi -show " ++
      rofiType ++ " -config " ++ configLocation ++ "/rofi/config.rasi")
 
--- general GridSelect movement 
+-- general GridSelect movement
 myGridNavigation :: TwoD a (Maybe a)
 myGridNavigation =
   makeXEventhandler $ shadowWithKeymap navKeyMap navDefaultHandler
@@ -156,7 +164,7 @@ myGridNavigation =
     -- The navigation handler ignores unknown key symbols
     navDefaultHandler = const myGridNavigation
 
--- my applications for Grid Select 
+-- my applications for Grid Select
 myApplications :: [(String, String)]
 myApplications =
   [ ("Caja", "caja")
@@ -182,38 +190,42 @@ spawnSelected' lst =
 -- my audio sink GridSelect.
 -- I want to do something more complicated and funny in the future
 -- but this will do for now
-pairs :: [String] -> [(String, String)]
-pairs (name:desc:rest) = (desc, name) : pairs rest
-pairs _ = []
+data AudioSink =
+  AudioSink
+    { sink_name :: String
+    , sink_desc :: String
+    }
+  deriving (Show)
 
+instance FromJSON AudioSink where
+  parseJSON =
+    withObject "AudioSink" $ \o -> do
+      sink_name <- o .: "name"
+      sink_desc <- o .: "description"
+      return AudioSink {..}
 
-audioGridCellWidth :: [(String, String)] -> Integer
-audioGridCellWidth =
-  (7 *) . toInteger . maximum . map (length . fst)
+audioGridCellWidth :: [AudioSink] -> Integer
+audioGridCellWidth = (7 *) . maximum . map (genericLength . sink_desc)
 
-audioGridSelect :: X ()
-audioGridSelect = do
-  output <- runProcessWithInput "pactl" ["list", "sinks"] ""
-  let sinks =
-        sortOn fst .
-        pairs .
-        map
-          (dropWhile (== ' ') .
-           drop 1 . dropWhile (/= ':') . dropWhile (`elem` " \t")) .
-        filter containsNamnOrBeskrivning . lines $
-        output
-      gridConfig =
+sinkToTuple :: AudioSink -> (String, String)
+sinkToTuple (AudioSink sink_name sink_desc) = (sink_desc, sink_name)
+
+doAudioGridSelect :: [AudioSink] -> X ()
+doAudioGridSelect sinks = do
+  let gridConfig =
         def
           { gs_navigate = myGridNavigation
           , gs_cellwidth = audioGridCellWidth sinks
           }
-  sinkMaybe <- gridselect gridConfig sinks
+  sinkMaybe <- gridselect gridConfig $ map sinkToTuple sinks
   case sinkMaybe of
     Just sink -> spawn $ "pactl set-default-sink " ++ sink
     Nothing -> return ()
-  where
-    containsNamnOrBeskrivning line =
-      isInfixOf "Namn" line || isInfixOf "Beskrivning" line
+
+audioGridSelect :: X ()
+audioGridSelect = do
+  output <- runProcessWithInput "pactl" ["-f", "json", "list", "sinks"] ""
+  whenJust (decode . fromString $ output) doAudioGridSelect
 
 -- function for switching to a layout
 switchToLayout :: String -> X ()
@@ -256,7 +268,7 @@ myConfig configLocation =
     , layoutHook = avoidStruts $ smartBorders myLayouts
     , keys = myKeys configLocation
     }
- 
+
 myManageHook :: ManageHook
 myManageHook =
   composeAll
@@ -284,7 +296,6 @@ scratchpads =
 myLayouts =
   named "Tall" (spacing 10 $ Tall 1 (1 / 4) (1 / 2)) |||
   named "Big Master Tall" (spacing 10 $ Tall 1 0 (2 / 3)) ||| Full
-
 
 -- start picom with my config and set my background using feh
 -- remember to install feh and picom
