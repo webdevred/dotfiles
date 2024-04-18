@@ -36,6 +36,7 @@ import System.Directory (doesFileExist, getHomeDirectory)
 
 import XMonad.Actions.GridSelect
 
+-- main function
 main :: IO ()
 main = do
   configLocation <- determineConfigLocation
@@ -61,6 +62,8 @@ determineConfigLocation = do
                   then return $ homeDirectory ++ "/.config/xmonad"
                   else error "can not find config location"
 
+-- xmobar stuff
+-- you need xmobar to be installed
 xmobarStatusBar :: String -> Int -> String -> StatusBarConfig
 xmobarStatusBar configLocation screen bar = statusBarProp cmd $ pure myXmobarPP
   where
@@ -71,6 +74,20 @@ xmobarStatusBar configLocation screen bar = statusBarProp cmd $ pure myXmobarPP
 untitledIfNull :: String -> String
 untitledIfNull "" = "untitled"
 untitledIfNull v = v
+
+excludeEmojis :: String -> String
+excludeEmojis = filter isEmoji
+  where
+    emojiRanges =
+      [ (0x1F600, 0x1F64F) -- Emoticons
+      , (0x1F300, 0x1F5FF) -- Miscellaneous Symbols and Pictographs
+      , (0x1F680, 0x1F6FF) -- Transport and Map Symbols
+      , (0x1F1E6, 0x1F1FF) -- Regional Indicator Symbols
+      ]
+    isEmoji :: Char -> Bool
+    isEmoji c =
+      not
+        (any (\(start, end) -> elem c [chr x | x <- [start .. end]]) emojiRanges)
 
 myXmobarPP :: PP
 myXmobarPP =
@@ -96,111 +113,18 @@ myXmobarPP =
     yellow = xmobarColor "#f1fa8c" ""
     red = xmobarColor "#ff5555" ""
 
+-- my preffered terminal
 myTerminal :: String
 myTerminal = "alacritty"
 
-myApplications :: [(String, String)]
-myApplications =
-  [ ("Caja", "caja")
-  , ("Discord", "discord")
-  , ("Emacs", "emacs-gtk")
-  , ("Firefox", "firefox")
-  , ("Flameshot", "flameshot launcher")
-  , ("GIMP", "gimp")
-  , ("Steam", "steam")
-  , ("Terminal", myTerminal)
-  ]
-
+-- rofi
 runRofi :: MonadIO m => String -> String -> m ()
 runRofi rofiType configLocation =
   spawn
     ("rofi -show " ++
      rofiType ++ " -config " ++ configLocation ++ "/rofi/config.rasi")
 
-excludeEmojis :: String -> String
-excludeEmojis = filter isEmoji
-  where
-    emojiRanges =
-      [ (0x1F600, 0x1F64F) -- Emoticons
-      , (0x1F300, 0x1F5FF) -- Miscellaneous Symbols and Pictographs
-      , (0x1F680, 0x1F6FF) -- Transport and Map Symbols
-      , (0x1F1E6, 0x1F1FF) -- Regional Indicator Symbols
-      ]
-    isEmoji :: Char -> Bool
-    isEmoji c =
-      not
-        (any (\(start, end) -> elem c [chr x | x <- [start .. end]]) emojiRanges)
-
-switchToLayout :: String -> X ()
-switchToLayout = sendMessage . JumpToLayout
-
-pairs :: [String] -> [(String, String)]
-pairs (namn:besk:rest) = (besk, namn) : pairs rest
-pairs _ = []
-
-audioGridCellWidth :: [(String, String)] -> Integer
-audioGridCellWidth =
-  (7 *) . toInteger . maximum . map (\(beskrivning, _) -> length beskrivning)
-
-audioGridSelect :: X ()
-audioGridSelect = do
-  output <- runProcessWithInput "pactl" ["list", "sinks"] ""
-  let sinks =
-        sortOn fst .
-        pairs .
-        map
-          (dropWhile (== ' ') .
-           drop 1 . dropWhile (/= ':') . dropWhile (`elem` " \t")) .
-        filter containsNamnOrBeskrivning . lines $
-        output
-      gridConfig =
-        def
-          { gs_navigate = myGridNavigation
-          , gs_cellwidth = audioGridCellWidth sinks
-          }
-  sinkMaybe <- gridselect gridConfig sinks
-  case sinkMaybe of
-    Just sink -> spawn $ "pactl set-default-sink " ++ sink
-    Nothing -> return ()
-  where
-    containsNamnOrBeskrivning line =
-      isInfixOf "Namn" line || isInfixOf "Beskrivning" line
-
-myKeys :: String -> XConfig Layout -> Map (ButtonMask, KeySym) (X ())
-myKeys configLocation conf@(XConfig {modMask = modm}) =
-  Map.union
-    (Map.fromList
-       [ ((modm, xK_s), spawnSelected' myApplications)
-       , ((modm, xK_p), audioGridSelect)
-       , ((modm, xK_x), runRofi "drun" configLocation)
-       , ((modm, xK_z), runRofi "window" configLocation)
-       , ((modm .|. shiftMask, xK_f), switchToLayout "Full")
-       , ((modm .|. shiftMask, xK_b), switchToLayout "Big Master Tall")
-       , ((modm .|. shiftMask, xK_t), switchToLayout "Tall")
-       , ( (0, xF86XK_AudioRaiseVolume)
-         , spawn "amixer -D pulse sset Master 10%+")
-       , ( (0, xF86XK_AudioLowerVolume)
-         , spawn "amixer -D pulse sset Master 10%-")
-       , ((0, xF86XK_AudioMute), spawn "amixer -D pulse sset Master toggle")
-       , ( (modm .|. shiftMask, xK_space)
-         , namedScratchpadAction scratchpads "emacs-scratch")
-       ]) $
-  keys def conf
-
-myConfig configLocation =
-  def
-    { borderWidth = 7
-    , terminal = myTerminal
-    , modMask = mod4Mask
-    , normalBorderColor = "#ff55ff"
-    , focusedBorderColor = "#ffaaff"
-    , focusFollowsMouse = False
-    , startupHook = myStartup configLocation <+> startupHook def
-    , manageHook = myManageHook <+> manageHook def
-    , layoutHook = avoidStruts $ smartBorders myLayouts
-    , keys = myKeys configLocation
-    }
-
+-- general GridSelect movement 
 myGridNavigation :: TwoD a (Maybe a)
 myGridNavigation =
   makeXEventhandler $ shadowWithKeymap navKeyMap navDefaultHandler
@@ -232,10 +156,107 @@ myGridNavigation =
     -- The navigation handler ignores unknown key symbols
     navDefaultHandler = const myGridNavigation
 
+-- my applications for Grid Select 
+myApplications :: [(String, String)]
+myApplications =
+  [ ("Caja", "caja")
+  , ("Chromium", "chromium")
+  , ("Discord", "discord")
+  , ("Emacs", "emacs-gtk")
+  , ("Firefox", "firefox")
+  , ("Flameshot", "flameshot launcher")
+  , ("GIMP", "gimp")
+  , ("Handbrake", "handbrake")
+  , ("MakeMKV", "makemkv")
+  , ("MongoDB Compass", "mongo-compass")
+  , ("Pluma", "pluma")
+  , ("Steam", "steam")
+  , ("Terminal", myTerminal)
+  , ("qBittorrent", "qbittorrent")
+  ]
+
 spawnSelected' :: [(String, String)] -> X ()
 spawnSelected' lst =
   gridselect def {gs_navigate = myGridNavigation} lst >>= flip whenJust spawn
 
+-- my audio sink GridSelect.
+-- I want to do something more complicated and funny in the future
+-- but this will do for now
+pairs :: [String] -> [(String, String)]
+pairs (name:desc:rest) = (desc, name) : pairs rest
+pairs _ = []
+
+
+audioGridCellWidth :: [(String, String)] -> Integer
+audioGridCellWidth =
+  (7 *) . toInteger . maximum . map (length . fst)
+
+audioGridSelect :: X ()
+audioGridSelect = do
+  output <- runProcessWithInput "pactl" ["list", "sinks"] ""
+  let sinks =
+        sortOn fst .
+        pairs .
+        map
+          (dropWhile (== ' ') .
+           drop 1 . dropWhile (/= ':') . dropWhile (`elem` " \t")) .
+        filter containsNamnOrBeskrivning . lines $
+        output
+      gridConfig =
+        def
+          { gs_navigate = myGridNavigation
+          , gs_cellwidth = audioGridCellWidth sinks
+          }
+  sinkMaybe <- gridselect gridConfig sinks
+  case sinkMaybe of
+    Just sink -> spawn $ "pactl set-default-sink " ++ sink
+    Nothing -> return ()
+  where
+    containsNamnOrBeskrivning line =
+      isInfixOf "Namn" line || isInfixOf "Beskrivning" line
+
+-- function for switching to a layout
+switchToLayout :: String -> X ()
+switchToLayout = sendMessage . JumpToLayout
+
+-- my keys merged with the default keys
+myKeys :: String -> XConfig Layout -> Map (ButtonMask, KeySym) (X ())
+myKeys configLocation conf@(XConfig {modMask = modm}) =
+  Map.union
+    (Map.fromList
+       [ ((modm, xK_s), spawnSelected' myApplications)
+       , ((modm, xK_p), audioGridSelect)
+       , ((modm, xK_x), runRofi "drun" configLocation)
+       , ((modm, xK_z), runRofi "window" configLocation)
+       , ((modm, xK_f), switchToLayout "Full")
+       , ((modm, xK_b), switchToLayout "Big Master Tall")
+       , ((modm, xK_t), switchToLayout "Tall")
+       , ((modm .|. shiftMask, xK_t), withFocused $ windows . W.sink)
+       , ( (0, xF86XK_AudioRaiseVolume)
+         , spawn "amixer -D pulse sset Master 10%+")
+       , ( (0, xF86XK_AudioLowerVolume)
+         , spawn "amixer -D pulse sset Master 10%-")
+       , ((0, xF86XK_AudioMute), spawn "amixer -D pulse sset Master toggle")
+       , ( (modm .|. shiftMask, xK_space)
+         , namedScratchpadAction scratchpads "emacs-scratch")
+       ]) $
+  keys def conf
+
+-- this takes the configLocation that is fetched in main
+myConfig configLocation =
+  def
+    { borderWidth = 7
+    , terminal = myTerminal
+    , modMask = mod4Mask
+    , normalBorderColor = "#ff55ff"
+    , focusedBorderColor = "#ffaaff"
+    , focusFollowsMouse = False
+    , startupHook = myStartup configLocation <+> startupHook def
+    , manageHook = myManageHook <+> manageHook def
+    , layoutHook = avoidStruts $ smartBorders myLayouts
+    , keys = myKeys configLocation
+    }
+ 
 myManageHook :: ManageHook
 myManageHook =
   composeAll
@@ -243,6 +264,7 @@ myManageHook =
     , className =? "discord" --> doShift "2"
     , className =? "steam" <&&> (not <$> title =? "Steam") -->
       doRectFloat (W.RationalRect 0.1 0.1 0.2 0.8)
+    , className =? "firefox" <&&> resource =? "Toolkit" --> doFullFloat
     ] <+>
   namedScratchpadManageHook scratchpads
 
@@ -255,10 +277,17 @@ scratchpads =
       "emacsclient -a='' -nc -F '(quote (name . \"emacs-scratch\"))'"
     manageEmacsScratch = nonFloating
 
+-- Tall is good for a lot of stuff
+-- sometimes I really like when my Emacs or Firefox takes up 2 / 3 up of
+-- the space and then I can have a few windows on the side.
+-- That is why I like Big Master Tall
 myLayouts =
-  named "Tall" (spacing 10 $ Tall 1 (3 / 100) (1 / 2)) |||
+  named "Tall" (spacing 10 $ Tall 1 (1 / 4) (1 / 2)) |||
   named "Big Master Tall" (spacing 10 $ Tall 1 0 (2 / 3)) ||| Full
 
+
+-- start picom with my config and set my background using feh
+-- remember to install feh and picom
 myStartup configLocation = do
   spawnOnce ("picom --config=" ++ configLocation ++ "/picom/picom.conf")
   spawnOnce "feh --bg-fill /mnt/HDD/bakgrund2.jpg /mnt/HDD/bakgrund.jpg"
