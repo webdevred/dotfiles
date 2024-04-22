@@ -27,13 +27,18 @@ import XMonad.Util.NamedScratchpad
 import XMonad.Util.Run (runProcessWithInput, spawnPipe)
 
 import Data.Aeson
-import Data.Aeson.Types ()
-import Data.ByteString.Lazy ()
+import Data.Aeson.Types (Parser)
+import Data.ByteString.Lazy (ByteString)
 import Data.String (fromString)
+import Data.Text (Text)
+
+import Numeric (showHex)
 
 import Data.Char (chr, isAscii, toLower)
 import Data.List (genericLength, isInfixOf, sortOn)
 import System.IO (hPutStrLn)
+
+import Data.Hashable
 
 import Graphics.X11.ExtraTypes.XF86
 
@@ -70,6 +75,13 @@ determineConfigLocation = do
                   then return $ homeDirectory ++ "/.config/xmonad"
                   else error "can not find config location"
 
+-- colors
+pink :: String
+pink = "#ffaaff"
+
+magenta :: String
+magenta = "#ff55ff"
+
 -- xmobar stuff
 -- you need xmobar to be installed
 xmobarStatusBar :: String -> Int -> String -> StatusBarConfig
@@ -100,26 +112,25 @@ excludeEmojis = filter isEmoji
 myXmobarPP :: PP
 myXmobarPP =
   def
-    { ppSep = pink " | "
+    { ppSep = xmobarPink " | "
     , ppTitleSanitize = xmobarStrip
-    , ppCurrent = pink . wrap "(" ")"
-    , ppVisible = pink . wrap "<" ">"
-    , ppHidden = magenta
-    , ppUrgent = red . wrap (yellow "!") (yellow "!")
+    , ppCurrent = xmobarPink . wrap "(" ")"
+    , ppVisible = xmobarPink . wrap "<" ">"
+    , ppHidden = xmobarMagenta
+    , ppUrgent = xmobarRed . wrap (xmobarYellow "!") (xmobarYellow "!")
     , ppLayout = map toLower
     , ppOrder = \[ws, l, _, wins] -> [ws, l, wins]
     , ppExtras = [logTitles formatFocused formatUnfocused]
     }
   where
-    formatFocused = wrap "[" "]" . pink . ppWindow
-    formatUnfocused = wrap "[" "]" . magenta . ppWindow
+    formatFocused = wrap "[" "]" . xmobarPink . ppWindow
+    formatUnfocused = wrap "[" "]" . xmobarMagenta . ppWindow
     ppWindow =
       map toLower . xmobarRaw . shorten 30 . excludeEmojis . untitledIfNull
-    pink, magenta, red, yellow :: String -> String
-    magenta = xmobarColor "#ff55ff" ""
-    pink = xmobarColor "#ffaaff" ""
-    yellow = xmobarColor "#f1fa8c" ""
-    red = xmobarColor "#ff5555" ""
+    xmobarMagenta = xmobarColor magenta ""
+    xmobarPink = xmobarColor pink ""
+    xmobarYellow = xmobarColor "#f1fa8c" ""
+    xmobarRed = xmobarColor "#ff5555" ""
 
 -- my preffered terminal
 myTerminal :: String
@@ -183,9 +194,46 @@ myApplications =
   , ("qBittorrent", "qbittorrent")
   ]
 
+toHex :: Int -> String
+toHex n =
+  if length hex == 1
+    then '0' : hex
+    else hex
+  where
+    hex = showHex n ""
+
+rgbToHex :: (Int, Int, Int) -> String
+rgbToHex (r, g, b) = '#' : concatMap toHex [r, g, b]
+
+randomInRange :: Int -> Int -> Int
+randomInRange x y = abs $ hashWithSalt y y `mod` x
+
+generateColor :: String -> String
+generateColor string =
+  rgbToHex $
+  if rem hash_value 3 == 0
+    then (255, 183 + pink_range, 193 + pink_range)
+    else if rem hash_value 3 == 1
+           then (255, 99 + red_range, 71 + red_range)
+           else (128 + purple_range, 0, 128 + purple_range)
+  where
+    pink_range = randomInRange 62 hash_value
+    red_range = randomInRange 184 hash_value
+    purple_range = randomInRange 127 hash_value
+    hash_value = hash string
+
+pinkColorizer :: String -> Bool -> X (String, String)
+pinkColorizer this hovering =
+  if hovering
+    then return (pink, "#ffffff")
+    else return (generateColor this, "#000000")
+
 spawnSelected' :: [(String, String)] -> X ()
 spawnSelected' lst =
-  gridselect def {gs_navigate = myGridNavigation} lst >>= flip whenJust spawn
+  gridselect
+    def {gs_colorizer = pinkColorizer, gs_navigate = myGridNavigation, gs_bordercolor = pink}
+    lst >>=
+  flip whenJust spawn
 
 -- my audio sink GridSelect.
 -- I want to do something more complicated and funny in the future
@@ -194,6 +242,7 @@ data AudioSink =
   AudioSink
     { sink_name :: String
     , sink_desc :: String
+    , sink_active :: Bool
     }
   deriving (Show)
 
@@ -202,25 +251,48 @@ instance FromJSON AudioSink where
     withObject "AudioSink" $ \o -> do
       sink_name <- o .: "name"
       sink_desc <- o .: "description"
+      status <- o .: "state" :: Parser Text
+      let sink_active = status == "RUNNING"
       return AudioSink {..}
 
 audioGridCellWidth :: [AudioSink] -> Integer
 audioGridCellWidth = (7 *) . maximum . map (genericLength . sink_desc)
 
 sinkToTuple :: AudioSink -> (String, String)
-sinkToTuple (AudioSink sink_name sink_desc) = (sink_desc, sink_name)
+sinkToTuple sink = (sink_desc sink, sink_name sink)
+
+getActiveSink :: [AudioSink] -> AudioSink
+getActiveSink (sink@(AudioSink {sink_active = True}):_) = sink
+getActiveSink (_:rest) = getActiveSink rest
+
+activeSinkNotHead :: [AudioSink] -> [AudioSink]
+activeSinkNotHead (f@(AudioSink {sink_active = True}):s:rest) = s : f : rest
+activeSinkNotHead lst = lst
+
+audioGridColorizer :: String -> String -> Bool -> X (String, String)
+audioGridColorizer activeSink this hovering =
+  if hovering
+    then return (pink, "#000000")
+    else if activeSink == this
+           then return (pink, "#ffffff")
+           else return (magenta, "#ffffff")
 
 doAudioGridSelect :: [AudioSink] -> X ()
 doAudioGridSelect sinks = do
-  let gridConfig =
+  let activeSink = sink_name . getActiveSink $ sinks
+      gridConfig =
         def
           { gs_navigate = myGridNavigation
           , gs_cellwidth = audioGridCellWidth sinks
+          , gs_colorizer = audioGridColorizer activeSink
+          , gs_bordercolor =  "#ffffff"
           }
-  sinkMaybe <- gridselect gridConfig $ map sinkToTuple sinks
+  sinkMaybe <- gridselect gridConfig $ prepareSinks sinks
   case sinkMaybe of
     Just sink -> spawn $ "pactl set-default-sink " ++ sink
     Nothing -> return ()
+  where
+    prepareSinks = map sinkToTuple . activeSinkNotHead . sortOn sink_desc
 
 audioGridSelect :: X ()
 audioGridSelect = do
@@ -260,8 +332,8 @@ myConfig configLocation =
     { borderWidth = 7
     , terminal = myTerminal
     , modMask = mod4Mask
-    , normalBorderColor = "#ff55ff"
-    , focusedBorderColor = "#ffaaff"
+    , normalBorderColor = magenta
+    , focusedBorderColor = pink
     , focusFollowsMouse = False
     , startupHook = myStartup configLocation <+> startupHook def
     , manageHook = myManageHook <+> manageHook def
