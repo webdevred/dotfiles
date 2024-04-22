@@ -82,6 +82,9 @@ pink = "#ffaaff"
 magenta :: String
 magenta = "#ff55ff"
 
+white :: String
+white = "#ffffff"
+
 -- xmobar stuff
 -- you need xmobar to be installed
 xmobarStatusBar :: String -> Int -> String -> StatusBarConfig
@@ -225,7 +228,7 @@ generateColor string =
 pinkColorizer :: String -> Bool -> X (String, String)
 pinkColorizer this hovering =
   if hovering
-    then return (pink, "#ffffff")
+    then return (pink, white)
     else return (generateColor this, "#000000")
 
 spawnSelected' :: [(String, String)] -> X ()
@@ -274,8 +277,8 @@ audioGridColorizer activeSink this hovering =
   if hovering
     then return (pink, "#000000")
     else if activeSink == this
-           then return (pink, "#ffffff")
-           else return (magenta, "#ffffff")
+           then return (pink, white)
+           else return (magenta, white)
 
 doAudioGridSelect :: [AudioSink] -> X ()
 doAudioGridSelect sinks = do
@@ -285,7 +288,7 @@ doAudioGridSelect sinks = do
           { gs_navigate = myGridNavigation
           , gs_cellwidth = audioGridCellWidth sinks
           , gs_colorizer = audioGridColorizer activeSink
-          , gs_bordercolor =  "#ffffff"
+          , gs_bordercolor =  white
           }
   sinkMaybe <- gridselect gridConfig $ prepareSinks sinks
   case sinkMaybe of
