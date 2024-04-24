@@ -35,7 +35,7 @@ import Data.Text (Text)
 import Numeric (showHex)
 
 import Data.Char (chr, isAscii, toLower)
-import Data.List (genericLength, isInfixOf, sortOn)
+import Data.List (genericLength, isInfixOf, sortOn, find)
 import System.IO (hPutStrLn)
 
 import Data.Hashable
@@ -181,7 +181,8 @@ myGridNavigation =
 -- my applications for Grid Select
 myApplications :: [(String, String)]
 myApplications =
-  [ ("Caja", "caja")
+  [ ("Brave", "brave")
+  , ("Caja", "caja")
   , ("Chromium", "chromium")
   , ("Discord", "discord")
   , ("Emacs", "emacs-gtk")
@@ -264,25 +265,25 @@ audioGridCellWidth = (7 *) . maximum . map (genericLength . sink_desc)
 sinkToTuple :: AudioSink -> (String, String)
 sinkToTuple sink = (sink_desc sink, sink_name sink)
 
-getActiveSink :: [AudioSink] -> AudioSink
-getActiveSink (sink@(AudioSink {sink_active = True}):_) = sink
-getActiveSink (_:rest) = getActiveSink rest
+getActiveSink :: [AudioSink] -> Maybe AudioSink
+getActiveSink = find sink_active
 
 activeSinkNotHead :: [AudioSink] -> [AudioSink]
 activeSinkNotHead (f@(AudioSink {sink_active = True}):s:rest) = s : f : rest
 activeSinkNotHead lst = lst
 
-audioGridColorizer :: String -> String -> Bool -> X (String, String)
+audioGridColorizer :: Maybe AudioSink -> String -> Bool -> X (String, String)
 audioGridColorizer activeSink this hovering =
   if hovering
     then return (pink, "#000000")
-    else if activeSink == this
+    else if (sink_name <$> activeSink) == Just this
            then return (pink, white)
            else return (magenta, white)
 
+
 doAudioGridSelect :: [AudioSink] -> X ()
 doAudioGridSelect sinks = do
-  let activeSink = sink_name . getActiveSink $ sinks
+  let activeSink = getActiveSink $ sinks
       gridConfig =
         def
           { gs_navigate = myGridNavigation
