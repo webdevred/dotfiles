@@ -391,7 +391,7 @@ myConfig configLocation =
     , focusFollowsMouse = False
     , startupHook = myStartup configLocation <+> startupHook def
     , manageHook = myManageHook <+> manageHook def
-    , layoutHook = avoidStruts $ smartBorders myLayouts
+    , layoutHook = lessBorders OnlyFloat $ avoidStruts $ smartBorders myLayouts
     , keys = myKeys configLocation
     }
 
