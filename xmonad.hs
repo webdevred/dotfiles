@@ -13,11 +13,8 @@ import XMonad.Hooks.EwmhDesktops
 import XMonad.Hooks.ManageDocks
 import XMonad.Hooks.ManageHelpers
 import XMonad.Layout.Fullscreen
-import XMonad.Layout.Hidden
 import XMonad.Layout.LayoutCombinators
 import XMonad.Layout.LayoutModifier
-import XMonad.Layout.MultiToggle
-import XMonad.Layout.MultiToggle.Instances
 import XMonad.Layout.Named
 import XMonad.Layout.NoBorders
 import XMonad.Layout.Spacing
@@ -35,8 +32,9 @@ import Data.Text (Text)
 import Numeric (showHex)
 
 import Data.Char (chr, isAscii, toLower)
-import Data.List (genericLength, isInfixOf, sortOn, find)
+import Data.List (find, genericLength, isInfixOf, sortOn)
 import System.IO (hPutStrLn)
+import Data.Maybe (isJust)
 
 import Data.Hashable
 
@@ -67,13 +65,12 @@ determineConfigLocation = do
   inDotXmonad <- doesFileExist (homeDirectory ++ "/.xmonad/xmonad.hs")
   inDotConfigXmonad <-
     doesFileExist (homeDirectory ++ "/.config/xmonad/xmonad.hs")
-  if inXmonad
-    then return $ homeDirectory ++ "/xmonad"
-    else if inDotXmonad
-           then return $ homeDirectory ++ "/.xmonad"
-           else if inDotConfigXmonad
-                  then return $ homeDirectory ++ "/.config/xmonad"
-                  else error "can not find config location"
+  cond
+    [ (inXmonad, return $ homeDirectory ++ "/xmonad")
+    , (inDotXmonad, return $ homeDirectory ++ "/.xmonad")
+    , (inDotConfigXmonad, return $ homeDirectory ++ "/.config/xmonad")
+    , (True, error "can not find config location")
+    ]
 
 -- colors
 pink :: String
@@ -158,6 +155,8 @@ myGridNavigation =
         , ((0, xK_space), setPos (0, 0) >> myGridNavigation)
         , ((shiftMask, xK_7), substringSearch myGridNavigation)
         , ((0, xK_s), substringSearch myGridNavigation)
+        , ((0, xK_Tab), moveNext >> navNSearch)
+        , ((shiftMask, xK_Tab), movePrev >> navNSearch)
         -- arrow keys
         , ((0, xK_Left), move (-1, 0) >> myGridNavigation)
         , ((0, xK_Right), move (1, 0) >> myGridNavigation)
@@ -188,9 +187,12 @@ myApplications =
   , ("Emacs", "emacs-gtk")
   , ("Firefox", "firefox")
   , ("Flameshot", "flameshot launcher")
+  , ("GHCI", myTerminal ++ " -T ghci -e ghci")
   , ("GIMP", "gimp")
+  , ("htop", myTerminal ++ " -T htop -e htop")
   , ("Handbrake", "handbrake")
   , ("MakeMKV", "makemkv")
+  , ("Midnight Commander", myTerminal ++ " -T \"Midnight Commander\" -e mc")
   , ("MongoDB Compass", "mongo-compass")
   , ("Pluma", "pluma")
   , ("Steam", "steam")
@@ -212,30 +214,38 @@ rgbToHex (r, g, b) = '#' : concatMap toHex [r, g, b]
 randomInRange :: Int -> Int -> Int
 randomInRange x y = abs $ hashWithSalt y y `mod` x
 
-generateColor :: String -> String
+generateColor :: String -> (Int, Int, Int)
 generateColor string =
-  rgbToHex $
-  if rem hash_value 3 == 0
-    then (255, 183 + pink_range, 193 + pink_range)
-    else if rem hash_value 3 == 1
-           then (255, 99 + red_range, 71 + red_range)
-           else (128 + purple_range, 0, 128 + purple_range)
+  cond
+    [ (rem hash_value 3 == 0, (255, 183 + pink_range, 193 + pink_range))
+    , (rem hash_value 3 == 1, (255, 99 + red_range, 71 + red_range))
+    , (True, (128 + purple_range, 0, 128 + purple_range))
+    ]
   where
     pink_range = randomInRange 62 hash_value
     red_range = randomInRange 184 hash_value
     purple_range = randomInRange 127 hash_value
     hash_value = hash string
 
+invertColor :: (Int, Int, Int) -> (Int, Int, Int)
+invertColor (r, g, b) = (255 - r, 255 - g, 255 - b)
+
 pinkColorizer :: String -> Bool -> X (String, String)
 pinkColorizer this hovering =
   if hovering
     then return (pink, white)
-    else return (generateColor this, "#000000")
+    else return (rgbToHex bgColor, rgbToHex . invertColor $ bgColor)
+  where
+    bgColor = generateColor this
 
 spawnSelected' :: [(String, String)] -> X ()
 spawnSelected' lst =
   gridselect
-    def {gs_colorizer = pinkColorizer, gs_navigate = myGridNavigation, gs_bordercolor = pink}
+    def
+      { gs_colorizer = pinkColorizer
+      , gs_navigate = myGridNavigation
+      , gs_bordercolor = pink
+      }
     lst >>=
   flip whenJust spawn
 
@@ -247,6 +257,7 @@ data AudioSink =
     { sink_name :: String
     , sink_desc :: String
     , sink_active :: Bool
+    , sink_mute :: Bool
     }
   deriving (Show)
 
@@ -257,6 +268,7 @@ instance FromJSON AudioSink where
       sink_desc <- o .: "description"
       status <- o .: "state" :: Parser Text
       let sink_active = status == "RUNNING"
+      sink_mute <- o .: "mute"
       return AudioSink {..}
 
 audioGridCellWidth :: [AudioSink] -> Integer
@@ -265,31 +277,33 @@ audioGridCellWidth = (7 *) . maximum . map (genericLength . sink_desc)
 sinkToTuple :: AudioSink -> (String, String)
 sinkToTuple sink = (sink_desc sink, sink_name sink)
 
-getActiveSink :: [AudioSink] -> Maybe AudioSink
-getActiveSink = find sink_active
-
 activeSinkNotHead :: [AudioSink] -> [AudioSink]
 activeSinkNotHead (f@(AudioSink {sink_active = True}):s:rest) = s : f : rest
 activeSinkNotHead lst = lst
 
-audioGridColorizer :: Maybe AudioSink -> String -> Bool -> X (String, String)
-audioGridColorizer activeSink this hovering =
-  if hovering
-    then return (pink, "#000000")
-    else if (sink_name <$> activeSink) == Just this
-           then return (pink, white)
-           else return (magenta, white)
-
+audioGridColorizer ::
+     Maybe AudioSink -> [AudioSink] -> String -> Bool -> X (String, String)
+audioGridColorizer activeSink mutedSinks this hovering =
+  cond
+    [ (hovering, return (pink, "#000000"))
+    , (isSinkMuted, return ("#ff0000", "#000000"))
+    , (isSinkActive, return (pink, white))
+    , (True, return (magenta, white))
+    ]
+  where
+    isSinkActive = (sink_name <$> activeSink) == Just this
+    isSinkMuted = isJust $ find (\sink -> sink_name sink == this) mutedSinks
 
 doAudioGridSelect :: [AudioSink] -> X ()
 doAudioGridSelect sinks = do
-  let activeSink = getActiveSink $ sinks
+  let mutedSinks = filter sink_mute sinks
+      activeSink = find sink_active sinks
       gridConfig =
         def
           { gs_navigate = myGridNavigation
           , gs_cellwidth = audioGridCellWidth sinks
-          , gs_colorizer = audioGridColorizer activeSink
-          , gs_bordercolor =  white
+          , gs_colorizer = audioGridColorizer activeSink mutedSinks
+          , gs_bordercolor = white
           }
   sinkMaybe <- gridselect gridConfig $ prepareSinks sinks
   case sinkMaybe of
@@ -303,6 +317,39 @@ audioGridSelect = do
   output <- runProcessWithInput "pactl" ["-f", "json", "list", "sinks"] ""
   whenJust (decode . fromString $ output) doAudioGridSelect
 
+-- window grid select
+fromClassName' :: Window -> Bool -> X (String, String)
+fromClassName' w active = runQuery className w >>= flip pinkColorizer active
+
+getAllWindows :: X [Window]
+getAllWindows = do
+  windowSet <- gets windowset
+  return $ W.allWindows windowSet
+
+getWindowTitles windows = do
+  sequence $ fmap (runQuery title) windows
+
+windowGridSelect :: X ()
+windowGridSelect = do
+  windows <- getAllWindows
+  windowTitles <- getWindowTitles windows
+  let gridConfig =
+        def
+          { gs_colorizer = fromClassName'
+          , gs_navigate = myGridNavigation
+          , gs_bordercolor = pink
+          , gs_cellwidth = 40 * 7
+          , gs_cellheight = 35
+          , gs_cellpadding = 5
+          }
+  goToSelected gridConfig
+
+-- spawn xprop info for current window
+spawnXpropInfo :: X ()
+spawnXpropInfo =
+  withFocused $ \w ->
+    spawn $ "xprop -id 0x" ++ showHex w "" ++ " | xmessage -file -"
+
 -- function for switching to a layout
 switchToLayout :: String -> X ()
 switchToLayout = sendMessage . JumpToLayout
@@ -313,6 +360,7 @@ myKeys configLocation conf@(XConfig {modMask = modm}) =
   Map.union
     (Map.fromList
        [ ((modm, xK_s), spawnSelected' myApplications)
+       , ((modm, xK_a), windowGridSelect)
        , ((modm, xK_p), audioGridSelect)
        , ((modm, xK_x), runRofi "drun" configLocation)
        , ((modm, xK_z), runRofi "window" configLocation)
@@ -320,11 +368,13 @@ myKeys configLocation conf@(XConfig {modMask = modm}) =
        , ((modm, xK_b), switchToLayout "Big Master Tall")
        , ((modm, xK_t), switchToLayout "Tall")
        , ((modm .|. shiftMask, xK_t), withFocused $ windows . W.sink)
+       , ((modm .|. shiftMask, xK_i), spawnXpropInfo)
        , ( (0, xF86XK_AudioRaiseVolume)
-         , spawn "amixer -D pulse sset Master 10%+")
+         , spawn "pactl set-sink-volume @DEFAULT_SINK@ +5%")
        , ( (0, xF86XK_AudioLowerVolume)
-         , spawn "amixer -D pulse sset Master 10%-")
-       , ((0, xF86XK_AudioMute), spawn "amixer -D pulse sset Master toggle")
+         , spawn "pactl set-sink-volume @DEFAULT_SINK@ -5%")
+       , ( (0, xF86XK_AudioMute)
+         , spawn "pactl set-sink-mute @DEFAULT_SINK@ toggle")
        , ( (modm .|. shiftMask, xK_space)
          , namedScratchpadAction scratchpads "emacs-scratch")
        ]) $
@@ -378,3 +428,10 @@ myLayouts =
 myStartup configLocation = do
   spawnOnce ("picom --config=" ++ configLocation ++ "/picom/picom.conf")
   spawnOnce "feh --bg-fill /mnt/HDD/bakgrund2.jpg /mnt/HDD/bakgrund.jpg"
+
+-- lisp like cond
+cond :: [(Bool, a)] -> a
+cond conditions =
+  case find fst conditions of
+    Just (_, result) -> result
+    Nothing -> error "No true condition could be found in cond"
