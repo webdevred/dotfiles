@@ -18,8 +18,9 @@ Config { font = "DejaVu Sans Mono 10"
        , commands = [ Run Cpu ["-L","3","-H","50", "--normal","#ffaaff","--high","red"] 10
                     , Run Memory ["-t","Mem: <usedratio>%"] 10
                     , Run Date "%a %b %_d %Y %H:%M:%S" "date" 10
+                    , Run Com "python3" [".xmonad/xmobar/pulseaudio_status.py"] "pulseaudio" 60
                     ]
        , sepChar = "%"
        , alignSep = "}{"
-       , template = "}{ %memory% | %cpu% | %date%"
+       , template = "}{ %pulseaudio% | %memory% | %cpu% | %date%"
        }
