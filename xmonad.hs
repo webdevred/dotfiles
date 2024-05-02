@@ -369,14 +369,14 @@ myKeys configLocation conf@(XConfig {modMask = modm}) =
        , ((modm, xK_t), switchToLayout "Tall")
        , ((modm .|. shiftMask, xK_t), withFocused $ windows . W.sink)
        , ((modm .|. shiftMask, xK_i), spawnXpropInfo)
+       , ((modm .|. shiftMask, xK_space), setLayout $ XMonad.layoutHook conf)
        , ( (0, xF86XK_AudioRaiseVolume)
          , spawn "pactl set-sink-volume @DEFAULT_SINK@ +5%")
        , ( (0, xF86XK_AudioLowerVolume)
          , spawn "pactl set-sink-volume @DEFAULT_SINK@ -5%")
        , ( (0, xF86XK_AudioMute)
          , spawn "pactl set-sink-mute @DEFAULT_SINK@ toggle")
-       , ( (modm .|. shiftMask, xK_space)
-         , namedScratchpadAction scratchpads "emacs-scratch")
+       , ((modm, xK_F1), namedScratchpadAction scratchpads "emacs-scratch")
        ]) $
   keys def conf
 
@@ -391,7 +391,7 @@ myConfig configLocation =
     , focusFollowsMouse = False
     , startupHook = myStartup configLocation <+> startupHook def
     , manageHook = myManageHook <+> manageHook def
-    , layoutHook = lessBorders OnlyFloat $ avoidStruts $ smartBorders myLayouts
+    , layoutHook = avoidStruts $ smartBorders myLayouts
     , keys = myKeys configLocation
     }
 
@@ -401,7 +401,7 @@ myManageHook =
     [ className =? "mpv" --> (doFullFloat <+> doShift "1")
     , className =? "discord" --> doShift "2"
     , className =? "steam" <&&> (not <$> title =? "Steam") -->
-      doRectFloat (W.RationalRect 0.1 0.1 0.2 0.8)
+      (hasBorder False <+> doRectFloat (W.RationalRect 0.1 0.1 0.2 0.8))
     , className =? "firefox" <&&> resource =? "Toolkit" --> doFullFloat
     ] <+>
   namedScratchpadManageHook scratchpads
