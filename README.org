@@ -13,3 +13,17 @@ Another important thing is that I should be able to use Steam and play games wit
 I use picom, rofi and xmobar for this setup and the configuration files for those are in included in this repo.
 The reason for this is that I dislike having .git in my home directory and most of the stuff in ~/.config I dont want to commit to Git.
 My Emacs configuration can be found in a separate repo.
+
+** Required software
+
+|----------------+-------------------|
+| Software       | Ubuntu            |
+|----------------+-------------------|
+| xmonad         | xmonad            |
+| xmonad-contrib | libghc-xmonad-dev |
+| xmobar         | xmobar            |
+| Aeson          | libghc-aeson-dev  |
+| feh            | feh               |
+| picom          | picom             |
+| rofi           | rofi              |
+|----------------+-------------------|
