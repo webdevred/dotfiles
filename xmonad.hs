@@ -55,8 +55,10 @@ main = do
         xmobarStatusBar configLocation 0 "big_screen" <>
         xmobarStatusBar configLocation 1 "small_screen_top" <>
         xmobarStatusBar configLocation 1 "small_screen_bottom"
-  xmonad . ewmhFullscreen . ewmh . withEasySB myBars defToggleStrutsKey $
+  xmonad . ewmhFullscreen . ewmh . withEasySB myBars toggleStrutsKey $
     myConfig configLocation
+    where toggleStrutsKey :: XConfig Layout -> (KeyMask, KeySym)
+          toggleStrutsKey XConfig{ modMask = modm} = (modm .|. shiftMask, xK_b)
 
 determineConfigLocation :: IO FilePath
 determineConfigLocation = do
