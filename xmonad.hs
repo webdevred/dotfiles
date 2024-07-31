@@ -23,18 +23,27 @@ import XMonad.Util.Loggers
 import XMonad.Util.NamedScratchpad
 import XMonad.Util.Run (runProcessWithInput, spawnPipe)
 
+import Data.Ord (Down(..))
 import Data.Aeson
 import Data.Aeson.Types (Parser)
 import Data.ByteString.Lazy (ByteString)
 import Data.String (fromString)
 import Data.Text (Text)
+import qualified Data.Text as T (unpack)
+import qualified Data.Text.Lazy as TL (strip, unpack)
+import qualified Data.Text.Lazy.Encoding as TLE (decodeUtf8)
 
 import Numeric (showHex)
 
+import GHC.Stack (withFrozenCallStack)
+
+import qualified Data.ByteString.Lazy as BL
+
+import Control.Exception (Exception, IOException, catch, throw, try)
 import Data.Char (chr, isAscii, toLower)
-import Data.List (find, genericLength, isInfixOf, sortOn)
+import Data.List (find, genericLength, isInfixOf, isPrefixOf, sortBy, sortOn)
+import Data.Maybe (fromMaybe)
 import System.IO (hPutStrLn)
-import Data.Maybe (isJust)
 
 import Data.Hashable
 
@@ -42,6 +51,11 @@ import Graphics.X11.ExtraTypes.XF86
 
 import qualified Data.Map as Map
 import Data.Map (Map)
+
+import qualified Data.Bimap as Bimap
+import Data.Bimap (Bimap)
+
+import Data.Ratio
 
 import System.Directory (doesFileExist, getHomeDirectory)
 
@@ -55,10 +69,8 @@ main = do
         xmobarStatusBar configLocation 0 "big_screen" <>
         xmobarStatusBar configLocation 1 "small_screen_top" <>
         xmobarStatusBar configLocation 1 "small_screen_bottom"
-  xmonad . ewmhFullscreen . ewmh . withEasySB myBars toggleStrutsKey $
+  xmonad . ewmhFullscreen . ewmh . docks . withSB myBars $
     myConfig configLocation
-    where toggleStrutsKey :: XConfig Layout -> (KeyMask, KeySym)
-          toggleStrutsKey XConfig{ modMask = modm} = (modm .|. shiftMask, xK_b)
 
 determineConfigLocation :: IO FilePath
 determineConfigLocation = do
@@ -71,7 +83,7 @@ determineConfigLocation = do
     [ (inXmonad, return $ homeDirectory ++ "/xmonad")
     , (inDotXmonad, return $ homeDirectory ++ "/.xmonad")
     , (inDotConfigXmonad, return $ homeDirectory ++ "/.config/xmonad")
-    , (True, error "can not find config location")
+    , (True, withFrozenCallStack $ error "can not find config location")
     ]
 
 -- colors
@@ -254,10 +266,13 @@ spawnSelected' lst =
 -- my audio sink GridSelect.
 -- I want to do something more complicated and funny in the future
 -- but this will do for now
+type SinkName = Text
+type SinkDesc = String
+
 data AudioSink =
   AudioSink
-    { sink_name :: String
-    , sink_desc :: String
+    { sink_name :: SinkName
+    , sink_desc :: SinkDesc
     , sink_active :: Bool
     , sink_mute :: Bool
     }
@@ -276,7 +291,7 @@ instance FromJSON AudioSink where
 audioGridCellWidth :: [AudioSink] -> Integer
 audioGridCellWidth = (7 *) . maximum . map (genericLength . sink_desc)
 
-sinkToTuple :: AudioSink -> (String, String)
+sinkToTuple :: AudioSink -> (SinkDesc, SinkName)
 sinkToTuple sink = (sink_desc sink, sink_name sink)
 
 activeSinkNotHead :: [AudioSink] -> [AudioSink]
@@ -284,7 +299,7 @@ activeSinkNotHead (f@(AudioSink {sink_active = True}):s:rest) = s : f : rest
 activeSinkNotHead lst = lst
 
 audioGridColorizer ::
-     Maybe AudioSink -> [AudioSink] -> String -> Bool -> X (String, String)
+     Maybe AudioSink -> [AudioSink] -> SinkName -> Bool -> X (String, String)
 audioGridColorizer activeSink mutedSinks this hovering =
   cond
     [ (hovering, return (pink, "#000000"))
@@ -294,10 +309,67 @@ audioGridColorizer activeSink mutedSinks this hovering =
     ]
   where
     isSinkActive = (sink_name <$> activeSink) == Just this
-    isSinkMuted = isJust $ find (\sink -> sink_name sink == this) mutedSinks
+    isSinkMuted = any (\sink -> sink_name sink == this) mutedSinks
 
-doAudioGridSelect :: [AudioSink] -> X ()
-doAudioGridSelect sinks = do
+decodeContent :: ByteString -> Map SinkName Int
+decodeContent str =
+  case decode str of
+    Just str' -> str'
+    Nothing ->
+      withFrozenCallStack $
+      error $
+      "can not decode \"" ++ faultyData ++ "\""
+  where faultyData = TL.unpack . TL.strip . TLE.decodeUtf8 $ str
+
+audioSinkMetrics :: String -> IO (Bimap Int SinkName)
+audioSinkMetrics filename = do
+  content <- tryReadFile
+  case content of
+    Right content' -> return . mapToBimap . decodeContent $ content'
+    Left _ -> return Bimap.empty
+  where
+    tryReadFile :: IO (Either IOException ByteString)
+    tryReadFile = try $ BL.readFile filename
+
+mapToBimap :: Map SinkName Int -> Bimap Int SinkName
+mapToBimap = Map.foldrWithKey insert' Bimap.empty
+  where insert' sink_name metric = Bimap.insert metric sink_name
+
+succ' :: Bimap Int SinkName -> Int -> Int
+succ' m v =
+  let v' = succ v
+   in if Bimap.member v' m
+        then succ' m v'
+        else v'
+
+-- let maxVal = toInteger . maximum . Map.elems $ m
+scaleDownMap :: Bimap Int SinkName -> Bimap Int SinkName
+scaleDownMap m =
+  let maxVal = toInteger (maxBound :: Int)
+      half x acc =
+        let x' = max 1 (fromInteger $ toInteger x * maxVal `div` (2 * maxVal))
+         in if Bimap.member x' acc
+              then succ' acc x'
+              else x'
+      halfFoldingFun acc (x, k) = Bimap.insert (half x acc) k acc
+   in foldl halfFoldingFun Bimap.empty $ Bimap.assocs m
+
+incrementKey :: SinkName -> Bimap Int SinkName -> Bimap Int SinkName
+incrementKey k m
+  | currentValue == maxBound =
+    let scaledDownMap = scaleDownMap m
+     in Bimap.adjustR (succ' scaledDownMap) k scaledDownMap
+  | Bimap.memberR k m = Bimap.adjustR (succ' m) k m
+  | otherwise = Bimap.insert (succ' m 0) k m
+  where
+    currentValue = fromMaybe 0 $ Bimap.lookupR k m
+
+sortingFun :: Bimap Int SinkName -> AudioSink -> Down (Maybe Int)
+sortingFun audioSinkMetrics sink = Down $ Bimap.lookupR (sink_name sink) audioSinkMetrics
+
+doAudioGridSelect :: String -> [AudioSink] -> X ()
+doAudioGridSelect configLocation sinks = do
+  audioSinkMetrics <- liftIO $ audioSinkMetrics filename
   let mutedSinks = filter sink_mute sinks
       activeSink = find sink_active sinks
       gridConfig =
@@ -307,17 +379,23 @@ doAudioGridSelect sinks = do
           , gs_colorizer = audioGridColorizer activeSink mutedSinks
           , gs_bordercolor = white
           }
+      prepareSinks = map sinkToTuple . activeSinkNotHead . sortOn (sortingFun audioSinkMetrics)
   sinkMaybe <- gridselect gridConfig $ prepareSinks sinks
   case sinkMaybe of
-    Just sink -> spawn $ "pactl set-default-sink " ++ sink
+    Just sink -> do
+      liftIO $
+        BL.writeFile
+          filename
+          (encode . Bimap.toMapR $ incrementKey sink audioSinkMetrics)
+      spawn $ "pactl set-default-sink " ++ T.unpack sink
     Nothing -> return ()
   where
-    prepareSinks = map sinkToTuple . activeSinkNotHead . sortOn sink_desc
+    filename = configLocation ++ "/.audiosink.json"
 
-audioGridSelect :: X ()
-audioGridSelect = do
+audioGridSelect :: String -> X ()
+audioGridSelect configLocation = do
   output <- runProcessWithInput "pactl" ["-f", "json", "list", "sinks"] ""
-  whenJust (decode . fromString $ output) doAudioGridSelect
+  whenJust (decode . fromString $ output) $ doAudioGridSelect configLocation
 
 -- window grid select
 fromClassName' :: Window -> Bool -> X (String, String)
@@ -328,8 +406,8 @@ getAllWindows = do
   windowSet <- gets windowset
   return $ W.allWindows windowSet
 
-getWindowTitles windows = do
-  sequence $ fmap (runQuery title) windows
+getWindowTitles :: [Window] -> X [String]
+getWindowTitles = mapM (runQuery title)
 
 windowGridSelect :: X ()
 windowGridSelect = do
@@ -363,7 +441,7 @@ myKeys configLocation conf@(XConfig {modMask = modm}) =
     (Map.fromList
        [ ((modm, xK_s), spawnSelected' myApplications)
        , ((modm, xK_a), windowGridSelect)
-       , ((modm, xK_p), audioGridSelect)
+       , ((modm, xK_p), audioGridSelect configLocation)
        , ((modm, xK_x), runRofi "drun" configLocation)
        , ((modm, xK_z), runRofi "window" configLocation)
        , ((modm, xK_f), switchToLayout "Full")

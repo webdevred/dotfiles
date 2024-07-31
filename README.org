@@ -23,6 +23,7 @@ My Emacs configuration can be found in a separate repo.
 | xmonad-contrib | libghc-xmonad-dev |
 | xmobar         | xmobar            |
 | Aeson          | libghc-aeson-dev  |
+| Bimap          | libghc-bimap-dev  |
 | feh            | feh               |
 | picom          | picom             |
 | rofi           | rofi              |
