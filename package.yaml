@@ -1,0 +1,30 @@
+name:                xmonad-conf
+version:             0.1.0.0
+github:              "webdevred/.xmonad"
+license:             BSD-3-Clause
+author:              "webdevred"
+maintainer:          "example@example.com"
+copyright:           "2024 webdevred"
+
+extra-source-files:
+- README.org
+
+description:         Please see the README on GitHub at <https://github.com/githubuser/xmonad-conf#readme>
+
+dependencies:
+- base >= 4.7 && < 5
+- xmonad
+- xmonad-contrib >= 0.18.0
+- containers
+- bimap
+- aeson
+- text
+- bytestring
+- hashable
+- directory
+- X11
+
+executables:
+  xmonad-session:
+    main: xmonad.hs
+    source-dirs: .

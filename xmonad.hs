@@ -15,18 +15,18 @@ import XMonad.Hooks.ManageHelpers
 import XMonad.Layout.Fullscreen
 import XMonad.Layout.LayoutCombinators
 import XMonad.Layout.LayoutModifier
-import XMonad.Layout.Named
 import XMonad.Layout.NoBorders
+import XMonad.Layout.Renamed
 import XMonad.Layout.Spacing
 import qualified XMonad.StackSet as W
 import XMonad.Util.Loggers
 import XMonad.Util.NamedScratchpad
 import XMonad.Util.Run (runProcessWithInput, spawnPipe)
 
-import Data.Ord (Down(..))
 import Data.Aeson
 import Data.Aeson.Types (Parser)
 import Data.ByteString.Lazy (ByteString)
+import Data.Ord (Down(..))
 import Data.String (fromString)
 import Data.Text (Text)
 import qualified Data.Text as T (unpack)
@@ -267,6 +267,7 @@ spawnSelected' lst =
 -- I want to do something more complicated and funny in the future
 -- but this will do for now
 type SinkName = Text
+
 type SinkDesc = String
 
 data AudioSink =
@@ -316,10 +317,9 @@ decodeContent str =
   case decode str of
     Just str' -> str'
     Nothing ->
-      withFrozenCallStack $
-      error $
-      "can not decode \"" ++ faultyData ++ "\""
-  where faultyData = TL.unpack . TL.strip . TLE.decodeUtf8 $ str
+      withFrozenCallStack $ error $ "can not decode \"" ++ faultyData ++ "\""
+  where
+    faultyData = TL.unpack . TL.strip . TLE.decodeUtf8 $ str
 
 audioSinkMetrics :: String -> IO (Bimap Int SinkName)
 audioSinkMetrics filename = do
@@ -333,7 +333,8 @@ audioSinkMetrics filename = do
 
 mapToBimap :: Map SinkName Int -> Bimap Int SinkName
 mapToBimap = Map.foldrWithKey insert' Bimap.empty
-  where insert' sink_name metric = Bimap.insert metric sink_name
+  where
+    insert' sink_name metric = Bimap.insert metric sink_name
 
 succ' :: Bimap Int SinkName -> Int -> Int
 succ' m v =
@@ -365,7 +366,8 @@ incrementKey k m
     currentValue = fromMaybe 0 $ Bimap.lookupR k m
 
 sortingFun :: Bimap Int SinkName -> AudioSink -> Down (Maybe Int)
-sortingFun audioSinkMetrics sink = Down $ Bimap.lookupR (sink_name sink) audioSinkMetrics
+sortingFun audioSinkMetrics sink =
+  Down $ Bimap.lookupR (sink_name sink) audioSinkMetrics
 
 doAudioGridSelect :: String -> [AudioSink] -> X ()
 doAudioGridSelect configLocation sinks = do
@@ -379,7 +381,9 @@ doAudioGridSelect configLocation sinks = do
           , gs_colorizer = audioGridColorizer activeSink mutedSinks
           , gs_bordercolor = white
           }
-      prepareSinks = map sinkToTuple . activeSinkNotHead . sortOn (sortingFun audioSinkMetrics)
+      prepareSinks =
+        map sinkToTuple .
+        activeSinkNotHead . sortOn (sortingFun audioSinkMetrics)
   sinkMaybe <- gridselect gridConfig $ prepareSinks sinks
   case sinkMaybe of
     Just sink -> do

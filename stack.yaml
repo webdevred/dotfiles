@@ -1,0 +1,10 @@
+snapshot:
+  url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/22/32.yaml
+
+packages:
+- .
+extra-deps:
+ - xmonad-contrib-0.18.0@sha256:aae129651391ec65e4c7cf4c23b280cc5e69f709d86668502426a41eebab9d3c,22370
+
+
+

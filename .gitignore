@@ -5,5 +5,7 @@ dist-newstyle
 xmonad.errors
 xmonad-x86_64-linux
 build-x86_64-linux
+dist-newstyle
+.stack-work
 .audiosink.json
 

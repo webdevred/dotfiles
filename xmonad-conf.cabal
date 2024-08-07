@@ -1,0 +1,45 @@
+cabal-version: 2.2
+
+-- This file has been generated from package.yaml by hpack version 0.35.2.
+--
+-- see: https://github.com/sol/hpack
+
+name:           xmonad-conf
+version:        0.1.0.0
+description:    Please see the README on GitHub at <https://github.com/githubuser/xmonad-conf#readme>
+homepage:       https://github.com/webdevred/.xmonad#readme
+bug-reports:    https://github.com/webdevred/.xmonad/issues
+author:         webdevred
+maintainer:     example@example.com
+copyright:      2024 webdevred
+license:        BSD-3-Clause
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.org
+
+source-repository head
+  type: git
+  location: https://github.com/webdevred/.xmonad
+
+executable xmonad-session
+  main-is: xmonad.hs
+  other-modules:
+      Paths_xmonad_conf
+  autogen-modules:
+      Paths_xmonad_conf
+  hs-source-dirs:
+      ./
+  build-depends:
+      X11
+    , aeson
+    , base >=4.7 && <5
+    , bimap
+    , bytestring
+    , containers
+    , directory
+    , hashable
+    , text
+    , xmonad
+    , xmonad-contrib >=0.18.0
+  default-language: Haskell2010
