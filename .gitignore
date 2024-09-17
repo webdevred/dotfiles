@@ -1,4 +1,3 @@
-dist-newstyle
 **/*~
 **/#*#
 **/.#*
@@ -8,4 +7,4 @@ build-x86_64-linux
 dist-newstyle
 .stack-work
 .audiosink.json
-
+stack.yaml.lock
