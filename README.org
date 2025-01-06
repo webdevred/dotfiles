@@ -16,15 +16,30 @@ My Emacs configuration can be found in a separate repo.
 
 ** Required software
 
-|----------------+-------------------|
-| Software       | Ubuntu            |
-|----------------+-------------------|
-| xmonad         | xmonad            |
-| xmonad-contrib | libghc-xmonad-dev |
-| xmobar         | xmobar            |
-| Aeson          | libghc-aeson-dev  |
-| Bimap          | libghc-bimap-dev  |
-| feh            | feh               |
-| picom          | picom             |
-| rofi           | rofi              |
-|----------------+-------------------|
+|----------------+-------------------+--------------------------------------------------------------|
+| Software       | Ubuntu            | Description                                                  |
+|----------------+-------------------+--------------------------------------------------------------|
+| stow           | stow              | Used to create symlinks in .config to my configuration files |
+| xmonad         | xmonad            | My window manager                                            |
+| xmobar         | xmobar            | Bar with extra information                                   |
+| xmonad-contrib | libghc-xmonad-dev | Extra functionality not available in the Xmonad package      |
+| Aeson          | libghc-aeson-dev  | Used to parse data from PulseAudio for audio sink switcher   |
+| Bimap          | libghc-bimap-dev  | Used for audio sink switcher                                 |
+| Alacritty      | alacritty         | Very nice terminal                                           |
+| fish           | fish              | Very nice shell                                              |
+| feh            | feh               | Wallpaper manager                                            |
+| picom          | picom             | Compositor                                                   |
+| rofi           | rofi              | Application launcher                                         |
+|----------------+-------------------+--------------------------------------------------------------|
+
+*** Install dependencies on Ubuntu
+
+#+begin_src bash
+  sudo apt install stow xmonad xmobar libghc-xmonad-dev libghc-aeson-dev libghc-bimap-dev alacritty fish feh picom rofi
+#+end_src
+
+*** Install the configuration into .config
+
+#+begin_src bash
+  stow -v */
+#+end_src  

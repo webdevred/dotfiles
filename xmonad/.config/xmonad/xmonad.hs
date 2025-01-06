@@ -21,6 +21,7 @@ import XMonad.Layout.Spacing
 import qualified XMonad.StackSet as W
 import XMonad.Util.Loggers
 import XMonad.Util.NamedScratchpad
+import XMonad.Hooks.WindowSwallowing
 import XMonad.Util.Run (runProcessWithInput, spawnPipe)
 
 import Data.Aeson
@@ -56,8 +57,6 @@ import qualified Data.Bimap as Bimap
 import Data.Bimap (Bimap)
 
 import Data.Ratio
-
-import System.Directory (doesFileExist, getHomeDirectory)
 
 import XMonad.Actions.GridSelect
 
@@ -104,7 +103,7 @@ excludeEmojis = filter isEmoji
     isEmoji :: Char -> Bool
     isEmoji c =
       not
-        (any (\(start, end) -> elem c [chr x | x <- [start .. end]]) emojiRanges)
+        (any (\(start, end) -> c `elem` [chr x | x <- [start .. end]]) emojiRanges)
 
 myXmobarPP :: PP
 myXmobarPP =
@@ -132,6 +131,9 @@ myXmobarPP =
 -- my preffered terminal
 myTerminal :: String
 myTerminal = "alacritty"
+
+myTerminalClass :: String
+myTerminalClass = "Alacritty"
 
 -- rofi
 runRofi :: MonadIO m => String -> m ()
@@ -456,6 +458,7 @@ myConfig =
     , focusFollowsMouse = False
     , startupHook = myStartup <+> startupHook def
     , manageHook = myManageHook <+> manageHook def
+    , handleEventHook = myHandleEventHook <+> handleEventHook def
     , layoutHook = avoidStruts $ smartBorders myLayouts
     , keys = myKeys
     }
@@ -471,6 +474,8 @@ myManageHook =
     , isFullscreen --> doFullFloat
     ] <+>
   namedScratchpadManageHook scratchpads
+
+myHandleEventHook = swallowEventHook (className =? myTerminalClass) (return True)
 
 scratchpads :: [NamedScratchpad]
 scratchpads =
