@@ -23,10 +23,10 @@ import XMonad.Util.Loggers
 import XMonad.Util.NamedScratchpad
 import XMonad.Util.Run (runProcessWithInput, spawnPipe)
 
-import Data.Ord (Down(..))
 import Data.Aeson
 import Data.Aeson.Types (Parser)
 import Data.ByteString.Lazy (ByteString)
+import Data.Ord (Down(..))
 import Data.String (fromString)
 import Data.Text (Text)
 import qualified Data.Text as T (unpack)
@@ -66,9 +66,9 @@ main :: IO ()
 main = do
   configLocation <- determineConfigLocation
   let myBars =
-        xmobarStatusBar configLocation 0 "big_screen" <>
-        xmobarStatusBar configLocation 1 "small_screen_top" <>
-        xmobarStatusBar configLocation 1 "small_screen_bottom"
+        xmobarStatusBar 0 "big_screen" <>
+        xmobarStatusBar 1 "small_screen_top" <>
+        xmobarStatusBar 1 "small_screen_bottom"
   xmonad . ewmhFullscreen . ewmh . docks . withSB myBars $
     myConfig configLocation
 
@@ -98,12 +98,12 @@ white = "#ffffff"
 
 -- xmobar stuff
 -- you need xmobar to be installed
-xmobarStatusBar :: String -> Int -> String -> StatusBarConfig
-xmobarStatusBar configLocation screen bar = statusBarProp cmd $ pure myXmobarPP
+xmobarStatusBar :: Int -> String -> StatusBarConfig
+xmobarStatusBar screen bar = statusBarProp cmd $ pure myXmobarPP
   where
     cmd =
       "xmobar -x" ++
-      show screen ++ " " ++ configLocation ++ "/xmobar/" ++ bar ++ "_config.hs"
+      show screen ++ " ~/.config/xmobar/" ++ bar ++ "_config.hs"
 
 untitledIfNull :: String -> String
 untitledIfNull "" = "untitled"
@@ -151,11 +151,8 @@ myTerminal :: String
 myTerminal = "alacritty"
 
 -- rofi
-runRofi :: MonadIO m => String -> String -> m ()
-runRofi rofiType configLocation =
-  spawn
-    ("rofi -show " ++
-     rofiType ++ " -config " ++ configLocation ++ "/rofi/config.rasi")
+runRofi :: MonadIO m => String -> m ()
+runRofi rofiType = spawn ("rofi -show " ++ rofiType)
 
 -- general GridSelect movement
 myGridNavigation :: TwoD a (Maybe a)
@@ -267,6 +264,7 @@ spawnSelected' lst =
 -- I want to do something more complicated and funny in the future
 -- but this will do for now
 type SinkName = Text
+
 type SinkDesc = String
 
 data AudioSink =
@@ -316,10 +314,9 @@ decodeContent str =
   case decode str of
     Just str' -> str'
     Nothing ->
-      withFrozenCallStack $
-      error $
-      "can not decode \"" ++ faultyData ++ "\""
-  where faultyData = TL.unpack . TL.strip . TLE.decodeUtf8 $ str
+      withFrozenCallStack $ error $ "can not decode \"" ++ faultyData ++ "\""
+  where
+    faultyData = TL.unpack . TL.strip . TLE.decodeUtf8 $ str
 
 audioSinkMetrics :: String -> IO (Bimap Int SinkName)
 audioSinkMetrics filename = do
@@ -333,7 +330,8 @@ audioSinkMetrics filename = do
 
 mapToBimap :: Map SinkName Int -> Bimap Int SinkName
 mapToBimap = Map.foldrWithKey insert' Bimap.empty
-  where insert' sink_name metric = Bimap.insert metric sink_name
+  where
+    insert' sink_name metric = Bimap.insert metric sink_name
 
 succ' :: Bimap Int SinkName -> Int -> Int
 succ' m v =
@@ -365,7 +363,8 @@ incrementKey k m
     currentValue = fromMaybe 0 $ Bimap.lookupR k m
 
 sortingFun :: Bimap Int SinkName -> AudioSink -> Down (Maybe Int)
-sortingFun audioSinkMetrics sink = Down $ Bimap.lookupR (sink_name sink) audioSinkMetrics
+sortingFun audioSinkMetrics sink =
+  Down $ Bimap.lookupR (sink_name sink) audioSinkMetrics
 
 doAudioGridSelect :: String -> [AudioSink] -> X ()
 doAudioGridSelect configLocation sinks = do
@@ -379,7 +378,9 @@ doAudioGridSelect configLocation sinks = do
           , gs_colorizer = audioGridColorizer activeSink mutedSinks
           , gs_bordercolor = white
           }
-      prepareSinks = map sinkToTuple . activeSinkNotHead . sortOn (sortingFun audioSinkMetrics)
+      prepareSinks =
+        map sinkToTuple .
+        activeSinkNotHead . sortOn (sortingFun audioSinkMetrics)
   sinkMaybe <- gridselect gridConfig $ prepareSinks sinks
   case sinkMaybe of
     Just sink -> do
@@ -442,8 +443,8 @@ myKeys configLocation conf@(XConfig {modMask = modm}) =
        [ ((modm, xK_s), spawnSelected' myApplications)
        , ((modm, xK_a), windowGridSelect)
        , ((modm, xK_p), audioGridSelect configLocation)
-       , ((modm, xK_x), runRofi "drun" configLocation)
-       , ((modm, xK_z), runRofi "window" configLocation)
+       , ((modm, xK_x), runRofi "drun")
+       , ((modm, xK_z), runRofi "window")
        , ((modm, xK_f), switchToLayout "Full")
        , ((modm, xK_b), switchToLayout "Big Master Tall")
        , ((modm, xK_t), switchToLayout "Tall")
@@ -469,7 +470,7 @@ myConfig configLocation =
     , normalBorderColor = magenta
     , focusedBorderColor = pink
     , focusFollowsMouse = False
-    , startupHook = myStartup configLocation <+> startupHook def
+    , startupHook = myStartup <+> startupHook def
     , manageHook = myManageHook <+> manageHook def
     , layoutHook = avoidStruts $ smartBorders myLayouts
     , keys = myKeys configLocation
@@ -483,6 +484,7 @@ myManageHook =
     , className =? "steam" <&&> (not <$> title =? "Steam") -->
       (hasBorder False <+> doRectFloat (W.RationalRect 0.1 0.1 0.2 0.8))
     , className =? "firefox" <&&> resource =? "Toolkit" --> doFullFloat
+    , isFullscreen --> doFullFloat
     ] <+>
   namedScratchpadManageHook scratchpads
 
@@ -505,8 +507,8 @@ myLayouts =
 
 -- start picom with my config and set my background using feh
 -- remember to install feh and picom
-myStartup configLocation = do
-  spawnOnce ("picom --config=" ++ configLocation ++ "/picom/picom.conf")
+myStartup = do
+  spawnOnce "picom"
   spawnOnce "feh --bg-fill /mnt/HDD/bakgrund2.jpg /mnt/HDD/bakgrund.jpg"
 
 -- lisp like cond

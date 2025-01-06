@@ -1,9 +1,4 @@
-dist-newstyle
+.audiosink.json
 **/*~
 **/#*#
 **/.#*
-xmonad.errors
-xmonad-x86_64-linux
-build-x86_64-linux
-.audiosink.json
-
