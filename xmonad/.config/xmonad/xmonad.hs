@@ -64,27 +64,11 @@ import XMonad.Actions.GridSelect
 -- main function
 main :: IO ()
 main = do
-  configLocation <- determineConfigLocation
   let myBars =
         xmobarStatusBar 0 "big_screen" <>
         xmobarStatusBar 1 "small_screen_top" <>
         xmobarStatusBar 1 "small_screen_bottom"
-  xmonad . ewmhFullscreen . ewmh . docks . withSB myBars $
-    myConfig configLocation
-
-determineConfigLocation :: IO FilePath
-determineConfigLocation = do
-  homeDirectory <- getHomeDirectory
-  inXmonad <- doesFileExist (homeDirectory ++ "/xmonad/xmonad.hs")
-  inDotXmonad <- doesFileExist (homeDirectory ++ "/.xmonad/xmonad.hs")
-  inDotConfigXmonad <-
-    doesFileExist (homeDirectory ++ "/.config/xmonad/xmonad.hs")
-  cond
-    [ (inXmonad, return $ homeDirectory ++ "/xmonad")
-    , (inDotXmonad, return $ homeDirectory ++ "/.xmonad")
-    , (inDotConfigXmonad, return $ homeDirectory ++ "/.config/xmonad")
-    , (True, withFrozenCallStack $ error "can not find config location")
-    ]
+  xmonad . ewmhFullscreen . ewmh . docks . withSB myBars $ myConfig
 
 -- colors
 pink :: String
@@ -102,8 +86,7 @@ xmobarStatusBar :: Int -> String -> StatusBarConfig
 xmobarStatusBar screen bar = statusBarProp cmd $ pure myXmobarPP
   where
     cmd =
-      "xmobar -x" ++
-      show screen ++ " ~/.config/xmobar/" ++ bar ++ "_config.hs"
+      "xmobar -x" ++ show screen ++ " ~/.config/xmobar/" ++ bar ++ "_config.hs"
 
 untitledIfNull :: String -> String
 untitledIfNull "" = "untitled"
@@ -393,8 +376,9 @@ doAudioGridSelect configLocation sinks = do
   where
     filename = configLocation ++ "/.audiosink.json"
 
-audioGridSelect :: String -> X ()
-audioGridSelect configLocation = do
+audioGridSelect :: X ()
+audioGridSelect = do
+  configLocation <- asks (cfgDir . directories)
   output <- runProcessWithInput "pactl" ["-f", "json", "list", "sinks"] ""
   whenJust (decode . fromString $ output) $ doAudioGridSelect configLocation
 
@@ -436,13 +420,13 @@ switchToLayout :: String -> X ()
 switchToLayout = sendMessage . JumpToLayout
 
 -- my keys merged with the default keys
-myKeys :: String -> XConfig Layout -> Map (ButtonMask, KeySym) (X ())
-myKeys configLocation conf@(XConfig {modMask = modm}) =
+myKeys :: XConfig Layout -> Map (ButtonMask, KeySym) (X ())
+myKeys conf@(XConfig {modMask = modm}) =
   Map.union
     (Map.fromList
        [ ((modm, xK_s), spawnSelected' myApplications)
        , ((modm, xK_a), windowGridSelect)
-       , ((modm, xK_p), audioGridSelect configLocation)
+       , ((modm, xK_p), audioGridSelect)
        , ((modm, xK_x), runRofi "drun")
        , ((modm, xK_z), runRofi "window")
        , ((modm, xK_f), switchToLayout "Full")
@@ -462,7 +446,7 @@ myKeys configLocation conf@(XConfig {modMask = modm}) =
   keys def conf
 
 -- this takes the configLocation that is fetched in main
-myConfig configLocation =
+myConfig =
   def
     { borderWidth = 7
     , terminal = myTerminal
@@ -473,7 +457,7 @@ myConfig configLocation =
     , startupHook = myStartup <+> startupHook def
     , manageHook = myManageHook <+> manageHook def
     , layoutHook = avoidStruts $ smartBorders myLayouts
-    , keys = myKeys configLocation
+    , keys = myKeys
     }
 
 myManageHook :: ManageHook
