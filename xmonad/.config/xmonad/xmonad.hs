@@ -9,9 +9,11 @@ import XMonad.Hooks.DynamicLog
 import XMonad.Hooks.StatusBar
 import XMonad.Hooks.StatusBar.PP
 
+import XMonad.Actions.DynamicWorkspaces (addHiddenWorkspace)
 import XMonad.Hooks.EwmhDesktops
 import XMonad.Hooks.ManageDocks
 import XMonad.Hooks.ManageHelpers
+import XMonad.Hooks.WindowSwallowing
 import XMonad.Layout.Fullscreen
 import XMonad.Layout.LayoutCombinators
 import XMonad.Layout.LayoutModifier
@@ -21,7 +23,6 @@ import XMonad.Layout.Spacing
 import qualified XMonad.StackSet as W
 import XMonad.Util.Loggers
 import XMonad.Util.NamedScratchpad
-import XMonad.Hooks.WindowSwallowing
 import XMonad.Util.Run (runProcessWithInput, spawnPipe)
 
 import Data.Aeson
@@ -103,7 +104,9 @@ excludeEmojis = filter isEmoji
     isEmoji :: Char -> Bool
     isEmoji c =
       not
-        (any (\(start, end) -> c `elem` [chr x | x <- [start .. end]]) emojiRanges)
+        (any
+           (\(start, end) -> c `elem` [chr x | x <- [start .. end]])
+           emojiRanges)
 
 myXmobarPP :: PP
 myXmobarPP =
@@ -463,6 +466,11 @@ myConfig =
     , keys = myKeys
     }
 
+doShiftDynamic :: WorkspaceId -> ManageHook
+doShiftDynamic ws = do
+  liftX $ addHiddenWorkspace ws
+  doShift ws
+
 myManageHook :: ManageHook
 myManageHook =
   composeAll
@@ -471,11 +479,12 @@ myManageHook =
     , className =? "steam" <&&> (not <$> title =? "Steam") -->
       (hasBorder False <+> doRectFloat (W.RationalRect 0.1 0.1 0.2 0.8))
     , className =? "firefox" <&&> resource =? "Toolkit" --> doFullFloat
-    , isFullscreen --> doFullFloat
+    , className =? "cs2" --> doShiftDynamic "game"
     ] <+>
   namedScratchpadManageHook scratchpads
 
-myHandleEventHook = swallowEventHook (className =? myTerminalClass) (return True)
+myHandleEventHook =
+  swallowEventHook (className =? myTerminalClass) (return True)
 
 scratchpads :: [NamedScratchpad]
 scratchpads =
