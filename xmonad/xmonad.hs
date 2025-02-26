@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE LambdaCase #-}
 
 -- a simple configuration
 import XMonad hiding ((|||))
@@ -24,6 +25,7 @@ import qualified XMonad.StackSet as W
 import XMonad.Util.Loggers
 import XMonad.Util.NamedScratchpad
 import XMonad.Util.Run (runProcessWithInput, spawnPipe)
+import Control.Monad (filterM)
 
 import Data.Aeson
 import Data.Aeson.Types (Parser)
@@ -31,9 +33,12 @@ import Data.ByteString.Lazy (ByteString)
 import Data.Ord (Down(..))
 import Data.String (fromString)
 import Data.Text (Text)
+import Text.Read (readMaybe)
 import qualified Data.Text as T (unpack)
 import qualified Data.Text.Lazy as TL (strip, unpack)
 import qualified Data.Text.Lazy.Encoding as TLE (decodeUtf8)
+
+import Data.Int (Int32)
 
 import Numeric (showHex)
 
@@ -46,6 +51,8 @@ import Data.Char (chr, isAscii, toLower)
 import Data.List (find, genericLength, isInfixOf, isPrefixOf, sortBy, sortOn)
 import Data.Maybe (fromMaybe)
 import System.IO (hPutStrLn)
+
+import XMonad.Util.WindowProperties (getProp32s)
 
 import Data.Hashable
 
@@ -180,6 +187,7 @@ myGridNavigation =
 myApplications :: [(String, String)]
 myApplications =
   [ ("Brave", "brave")
+  , ("wpc", "wpc")
   , ("Caja", "caja")
   , ("Chromium", "chromium")
   , ("Discord", "discord")
@@ -387,6 +395,52 @@ audioGridSelect = do
   output <- runProcessWithInput "pactl" ["-f", "json", "list", "sinks"] ""
   whenJust (decode . fromString $ output) $ doAudioGridSelect configLocation
 
+data AudioWindow = AudioWindow {
+  input_pid :: Int32,
+  input_corked :: Bool
+  } deriving (Show)
+  
+instance FromJSON AudioWindow where
+  parseJSON =
+    withObject "AudioWindow" $ \o -> do
+      properties <- o .: "properties"
+      pidText    <- properties .: "application.process.id"
+      input_pid <- case readMaybe pidText of
+             Just p -> return p
+             Nothing -> fail "Failed to convert 'application.process.id' to Int32"
+      input_corked <- o .: "corked"
+      return AudioWindow{..}
+
+comparePid :: Foldable t => t AudioWindow -> Window -> X Bool
+comparePid aws w = do
+  mPid <- getProp32s "_NET_WM_PID" w
+  case mPid of
+    Just [x] -> return $ any (\aw -> and [fromIntegral x == input_pid aw, not $ input_corked aw]) aws
+    _        -> return False
+
+
+doAudioWindowGridSelect :: [AudioWindow] -> X ()
+doAudioWindowGridSelect audio_windows = do
+  ws <- getAllWindows
+  filtered_ws <- filterM (comparePid audio_windows) ws
+  windowTitles <- getWindowTitles filtered_ws
+  let gridConfig =
+        def
+          { gs_colorizer = fromClassName'
+          , gs_navigate = myGridNavigation
+          , gs_bordercolor = pink
+          , gs_cellwidth = 40 * 7
+          , gs_cellheight = 35
+          , gs_cellpadding = 5
+          }
+  mWin <- gridselect gridConfig (zip windowTitles filtered_ws)
+  whenJust mWin  (\w -> windows (W.focusWindow w))
+
+audioWindowGridSelect :: X ()
+audioWindowGridSelect = do
+  output <- runProcessWithInput "pactl" ["-f", "json", "list", "sink-inputs"] ""
+  whenJust (decode . fromString $ output) $ doAudioWindowGridSelect
+
 -- window grid select
 fromClassName' :: Window -> Bool -> X (String, String)
 fromClassName' w active = runQuery className w >>= flip pinkColorizer active
@@ -401,8 +455,6 @@ getWindowTitles = mapM (runQuery title)
 
 windowGridSelect :: X ()
 windowGridSelect = do
-  windows <- getAllWindows
-  windowTitles <- getWindowTitles windows
   let gridConfig =
         def
           { gs_colorizer = fromClassName'
@@ -432,6 +484,7 @@ myKeys conf@(XConfig {modMask = modm}) =
        [ ((modm, xK_s), spawnSelected' myApplications)
        , ((modm, xK_a), windowGridSelect)
        , ((modm, xK_p), audioGridSelect)
+       , ((modm, xK_o), audioWindowGridSelect)
        , ((modm, xK_x), runRofi "drun")
        , ((modm, xK_z), runRofi "window")
        , ((modm, xK_f), switchToLayout "Full")
@@ -461,7 +514,7 @@ myConfig =
     , focusFollowsMouse = False
     , startupHook = myStartup <+> startupHook def
     , manageHook = myManageHook <+> manageHook def
-    , handleEventHook = myHandleEventHook <+> handleEventHook def
+    , handleEventHook =  handleEventHook def
     , layoutHook = avoidStruts $ smartBorders myLayouts
     , keys = myKeys
     }
@@ -503,11 +556,10 @@ myLayouts =
   named "Tall" (spacing 10 $ Tall 1 (1 / 4) (1 / 2)) |||
   named "Big Master Tall" (spacing 10 $ Tall 1 0 (2 / 3)) ||| Full
 
--- start picom with my config and set my background using feh
--- remember to install feh and picom
+-- start picom with my config and set my background using wpc
 myStartup = do
   spawnOnce "picom"
-  spawnOnce "feh --bg-fill /mnt/HDD/bakgrund2.jpg /mnt/HDD/bakgrund.jpg"
+  spawnOnce "wpc -b"
 
 -- lisp like cond
 cond :: [(Bool, a)] -> a
