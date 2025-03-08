@@ -455,6 +455,8 @@ getWindowTitles = mapM (runQuery title)
 
 windowGridSelect :: X ()
 windowGridSelect = do
+  windows <- getAllWindows
+  windowTitles <- getWindowTitles windows
   let gridConfig =
         def
           { gs_colorizer = fromClassName'
