@@ -61,9 +61,6 @@ import Graphics.X11.ExtraTypes.XF86
 import qualified Data.Map as Map
 import Data.Map (Map)
 
-import qualified Data.Bimap as Bimap
-import Data.Bimap (Bimap)
-
 import Data.Ratio
 
 import XMonad.Actions.GridSelect
@@ -314,53 +311,36 @@ decodeContent str =
   where
     faultyData = TL.unpack . TL.strip . TLE.decodeUtf8 $ str
 
-audioSinkMetrics :: String -> IO (Bimap Int SinkName)
+audioSinkMetrics :: String -> IO (Map SinkName Int)
 audioSinkMetrics filename = do
   content <- tryReadFile
   case content of
-    Right content' -> return . mapToBimap . decodeContent $ content'
-    Left _ -> return Bimap.empty
+    Right content' -> return . decodeContent $ content'
+    Left _ -> return Map.empty
   where
     tryReadFile :: IO (Either IOException ByteString)
     tryReadFile = try $ BL.readFile filename
 
-mapToBimap :: Map SinkName Int -> Bimap Int SinkName
-mapToBimap = Map.foldrWithKey insert' Bimap.empty
-  where
-    insert' sink_name metric = Bimap.insert metric sink_name
-
-succ' :: Bimap Int SinkName -> Int -> Int
-succ' m v =
-  let v' = succ v
-   in if Bimap.member v' m
-        then succ' m v'
-        else v'
-
--- let maxVal = toInteger . maximum . Map.elems $ m
-scaleDownMap :: Bimap Int SinkName -> Bimap Int SinkName
+scaleDownMap :: Map SinkName Int -> Map SinkName Int
 scaleDownMap m =
   let maxVal = toInteger (maxBound :: Int)
-      half x acc =
-        let x' = max 1 (fromInteger $ toInteger x * maxVal `div` (2 * maxVal))
-         in if Bimap.member x' acc
-              then succ' acc x'
-              else x'
-      halfFoldingFun acc (x, k) = Bimap.insert (half x acc) k acc
-   in foldl halfFoldingFun Bimap.empty $ Bimap.assocs m
+      half x = max 1 $ div x 2
+      halfFoldingFun k x acc = Map.insert k (half x) acc
+   in Map.foldrWithKey halfFoldingFun Map.empty m
 
-incrementKey :: SinkName -> Bimap Int SinkName -> Bimap Int SinkName
+incrementKey :: SinkName -> Map SinkName Int -> Map SinkName Int
 incrementKey k m
   | currentValue == maxBound =
     let scaledDownMap = scaleDownMap m
-     in Bimap.adjustR (succ' scaledDownMap) k scaledDownMap
-  | Bimap.memberR k m = Bimap.adjustR (succ' m) k m
-  | otherwise = Bimap.insert (succ' m 0) k m
+     in Map.adjust succ k scaledDownMap
+  | Map.member k m = Map.adjust (succ) k m
+  | otherwise = Map.insert k 1 m
   where
-    currentValue = fromMaybe 0 $ Bimap.lookupR k m
+    currentValue = fromMaybe 0 $ Map.lookup k m
 
-sortingFun :: Bimap Int SinkName -> AudioSink -> Down (Maybe Int)
+sortingFun :: Map SinkName Int -> AudioSink -> Down (Maybe Int)
 sortingFun audioSinkMetrics sink =
-  Down $ Bimap.lookupR (sink_name sink) audioSinkMetrics
+  Down $ Map.lookup (sink_name sink) audioSinkMetrics
 
 doAudioGridSelect :: String -> [AudioSink] -> X ()
 doAudioGridSelect configLocation sinks = do
@@ -383,7 +363,7 @@ doAudioGridSelect configLocation sinks = do
       liftIO $
         BL.writeFile
           filename
-          (encode . Bimap.toMapR $ incrementKey sink audioSinkMetrics)
+          (encode $ incrementKey sink audioSinkMetrics)
       spawn $ "pactl set-default-sink " ++ T.unpack sink
     Nothing -> return ()
   where
