@@ -323,8 +323,7 @@ audioSinkMetrics filename = do
 
 scaleDownMap :: Map SinkName Int -> Map SinkName Int
 scaleDownMap m =
-  let maxVal = toInteger (maxBound :: Int)
-      half x = max 1 $ div x 2
+  let half x = max 2 $ div x 2
       halfFoldingFun k x acc = Map.insert k (half x) acc
    in Map.foldrWithKey halfFoldingFun Map.empty m
 
@@ -332,9 +331,9 @@ incrementKey :: SinkName -> Map SinkName Int -> Map SinkName Int
 incrementKey k m
   | currentValue == maxBound =
     let scaledDownMap = scaleDownMap m
-     in Map.adjust succ k scaledDownMap
+     in Map.adjust (2 +) k scaledDownMap
   | Map.member k m = Map.adjust (succ) k m
-  | otherwise = Map.insert k 1 m
+  | otherwise = Map.insert k 2 m
   where
     currentValue = fromMaybe 0 $ Map.lookup k m
 
