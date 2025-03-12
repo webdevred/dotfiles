@@ -4,4 +4,5 @@ picom/picom.conf:.config/picom/picom.conf
 rofi/config.rasi:.config/rofi/config.rasi
 xmonad/xmonad.hs:.config/xmonad/xmonad.hs
 xmobar:.config/xmobar
+mpv:.config/mpv
 ghci_config:.ghci
