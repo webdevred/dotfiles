@@ -1,6 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE LambdaCase #-}
 
 -- a simple configuration
 import XMonad hiding ((|||))
@@ -10,6 +9,7 @@ import XMonad.Hooks.DynamicLog
 import XMonad.Hooks.StatusBar
 import XMonad.Hooks.StatusBar.PP
 
+import Control.Monad (filterM)
 import XMonad.Actions.DynamicWorkspaces (addHiddenWorkspace)
 import XMonad.Hooks.EwmhDesktops
 import XMonad.Hooks.ManageDocks
@@ -25,7 +25,6 @@ import qualified XMonad.StackSet as W
 import XMonad.Util.Loggers
 import XMonad.Util.NamedScratchpad
 import XMonad.Util.Run (runProcessWithInput, spawnPipe)
-import Control.Monad (filterM)
 
 import Data.Aeson
 import Data.Aeson.Types (Parser)
@@ -33,10 +32,10 @@ import Data.ByteString.Lazy (ByteString)
 import Data.Ord (Down(..))
 import Data.String (fromString)
 import Data.Text (Text)
-import Text.Read (readMaybe)
 import qualified Data.Text as T (unpack)
 import qualified Data.Text.Lazy as TL (strip, unpack)
 import qualified Data.Text.Lazy.Encoding as TLE (decodeUtf8)
+import Text.Read (readMaybe)
 
 import Data.Int (Int32)
 
@@ -324,7 +323,7 @@ audioSinkMetrics filename = do
 scaleDownMap :: Map SinkName Int -> Map SinkName Int
 scaleDownMap m =
   let half x = max 2 $ div x 2
-      halfFoldingFun k x acc = Map.insert k (half x) acc
+      halfFoldingFun k x = Map.insert k (half x)
    in Map.foldrWithKey halfFoldingFun Map.empty m
 
 incrementKey :: SinkName -> Map SinkName Int -> Map SinkName Int
@@ -332,7 +331,7 @@ incrementKey k m
   | currentValue == maxBound =
     let scaledDownMap = scaleDownMap m
      in Map.adjust (2 +) k scaledDownMap
-  | Map.member k m = Map.adjust (succ) k m
+  | Map.member k m = Map.adjust succ k m
   | otherwise = Map.insert k 2 m
   where
     currentValue = fromMaybe 0 $ Map.lookup k m
@@ -360,9 +359,7 @@ doAudioGridSelect configLocation sinks = do
   case sinkMaybe of
     Just sink -> do
       liftIO $
-        BL.writeFile
-          filename
-          (encode $ incrementKey sink audioSinkMetrics)
+        BL.writeFile filename (encode $ incrementKey sink audioSinkMetrics)
       spawn $ "pactl set-default-sink " ++ T.unpack sink
     Nothing -> return ()
   where
@@ -374,29 +371,33 @@ audioGridSelect = do
   output <- runProcessWithInput "pactl" ["-f", "json", "list", "sinks"] ""
   whenJust (decode . fromString $ output) $ doAudioGridSelect configLocation
 
-data AudioWindow = AudioWindow {
-  input_pid :: Int32,
-  input_corked :: Bool
-  } deriving (Show)
-  
+data AudioWindow =
+  AudioWindow
+    { input_pid :: Int32
+    , input_corked :: Bool
+    }
+  deriving (Show)
+
 instance FromJSON AudioWindow where
   parseJSON =
     withObject "AudioWindow" $ \o -> do
       properties <- o .: "properties"
-      pidText    <- properties .: "application.process.id"
-      input_pid <- case readMaybe pidText of
-             Just p -> return p
-             Nothing -> fail "Failed to convert 'application.process.id' to Int32"
+      pidText <- properties .: "application.process.id"
+      input_pid <-
+        case readMaybe pidText of
+          Just p -> return p
+          Nothing -> fail "Failed to convert 'application.process.id' to Int32"
       input_corked <- o .: "corked"
-      return AudioWindow{..}
+      return AudioWindow {..}
 
 comparePid :: Foldable t => t AudioWindow -> Window -> X Bool
 comparePid aws w = do
   mPid <- getProp32s "_NET_WM_PID" w
   case mPid of
-    Just [x] -> return $ any (\aw -> and [fromIntegral x == input_pid aw, not $ input_corked aw]) aws
-    _        -> return False
-
+    Just [x] ->
+      return $
+      any (\aw -> fromIntegral x == input_pid aw && not (input_corked aw)) aws
+    _ -> return False
 
 doAudioWindowGridSelect :: [AudioWindow] -> X ()
 doAudioWindowGridSelect audio_windows = do
@@ -413,12 +414,12 @@ doAudioWindowGridSelect audio_windows = do
           , gs_cellpadding = 5
           }
   mWin <- gridselect gridConfig (zip windowTitles filtered_ws)
-  whenJust mWin  (\w -> windows (W.focusWindow w))
+  whenJust mWin (windows . W.focusWindow)
 
 audioWindowGridSelect :: X ()
 audioWindowGridSelect = do
   output <- runProcessWithInput "pactl" ["-f", "json", "list", "sink-inputs"] ""
-  whenJust (decode . fromString $ output) $ doAudioWindowGridSelect
+  whenJust (decode . fromString $ output) doAudioWindowGridSelect
 
 -- window grid select
 fromClassName' :: Window -> Bool -> X (String, String)
@@ -495,7 +496,7 @@ myConfig =
     , focusFollowsMouse = False
     , startupHook = myStartup <+> startupHook def
     , manageHook = myManageHook <+> manageHook def
-    , handleEventHook =  handleEventHook def
+    , handleEventHook = handleEventHook def
     , layoutHook = avoidStruts $ smartBorders myLayouts
     , keys = myKeys
     }
