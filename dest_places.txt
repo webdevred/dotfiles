@@ -1,5 +1,5 @@
 # xmonad
-xmonad:.config/xmonad
+xmonad/xmonad.hs:.config/xmonad/xmonad.hs
 xmobar:.config/xmobar
 picom:.config/picom
 rofi:.config/rofi

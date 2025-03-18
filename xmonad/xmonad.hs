@@ -49,6 +49,7 @@ import Control.Exception (Exception, IOException, catch, throw, try)
 import Data.Char (chr, isAscii, toLower)
 import Data.List (find, genericLength, isInfixOf, isPrefixOf, sortBy, sortOn)
 import Data.Maybe (fromMaybe)
+import System.Directory (XdgDirectory(XdgConfig), getXdgDirectory)
 import System.IO (hPutStrLn)
 
 import XMonad.Util.WindowProperties (getProp32s)
@@ -64,14 +65,36 @@ import Data.Ratio
 
 import XMonad.Actions.GridSelect
 
+type ConfigBar = (String, String)
+
+decodeBars :: ByteString -> Map String [String]
+decodeBars str =
+  case decode str of
+    Just str' -> str'
+    Nothing ->
+      withFrozenCallStack $ error $ "can not decode \"" ++ faultyData ++ "\""
+  where
+    faultyData = TL.unpack . TL.strip . TLE.decodeUtf8 $ str
+
+listConfigBars :: IO [ConfigBar]
+listConfigBars = do
+  path <- getXdgDirectory XdgConfig "xmonad"
+  content <- tryReadFile path
+  case content of
+    Right content' ->
+      return . flattenConfigBars . Map.assocs . decodeBars $ content'
+    Left _ -> return []
+  where
+    flattenConfigBars xs = [(a, b) | (a, bs) <- xs, b <- bs]
+    tryReadFile :: FilePath -> IO (Either IOException ByteString)
+    tryReadFile path = try $ BL.readFile $ path ++ "/bars.json"
+
 -- main function
 main :: IO ()
 main = do
-  let myBars =
-        xmobarStatusBar 0 "big_screen" <>
-        xmobarStatusBar 1 "small_screen_top" <>
-        xmobarStatusBar 1 "small_screen_bottom"
-  xmonad . ewmhFullscreen . ewmh . docks . withSB myBars $ myConfig
+  configBars <- listConfigBars
+  let myBars = mconcat $ map xmobarStatusBar configBars
+   in xmonad . ewmhFullscreen . ewmh . docks . withSB myBars $ myConfig
 
 -- colors
 pink :: String
@@ -85,11 +108,10 @@ white = "#ffffff"
 
 -- xmobar stuff
 -- you need xmobar to be installed
-xmobarStatusBar :: Int -> String -> StatusBarConfig
-xmobarStatusBar screen bar = statusBarProp cmd $ pure myXmobarPP
+xmobarStatusBar :: ConfigBar -> StatusBarConfig
+xmobarStatusBar (screen, bar) = statusBarProp cmd $ pure myXmobarPP
   where
-    cmd =
-      "xmobar -x" ++ show screen ++ " ~/.config/xmobar/" ++ bar ++ "_config.hs"
+    cmd = "xmobar -x" ++ screen ++ " ~/.config/xmobar/" ++ bar
 
 untitledIfNull :: String -> String
 untitledIfNull "" = "untitled"
@@ -363,7 +385,7 @@ doAudioGridSelect configLocation sinks = do
       spawn $ "pactl set-default-sink " ++ T.unpack sink
     Nothing -> return ()
   where
-    filename = configLocation ++ "/.audiosink.json"
+    filename = configLocation ++ "/audiosink.json"
 
 audioGridSelect :: X ()
 audioGridSelect = do
