@@ -1,16 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE BlockArguments #-}
 
 import Data.Aeson (encode)
 import Data.Aeson.Types (Parser)
+import qualified Data.ByteString.Lazy as BL
 import Data.Char (isDigit)
 import Data.List (intercalate, isPrefixOf, isSuffixOf)
 import qualified Data.Map as M
 import Data.Map (Map)
-import qualified Data.Text as T (unpack)
-import qualified Data.Text.Lazy as TL (strip, unpack)
-import qualified Data.Text.Lazy.Encoding as TLE (decodeUtf8)
 import GHC.Stack (withFrozenCallStack)
 import System.Directory (getDirectoryContents)
 import System.Environment (getArgs)
@@ -30,8 +26,8 @@ type Bar = String
 parseMonitor :: String -> Monitor
 parseMonitor monStr = Monitor parseMonitorName parseMonitorId
   where
-    parseMonitorId = read $ takeWhile (/= ':') $ dropWhile (== ' ') monStr
-    parseMonitorName = reverse $ takeWhile (/= ' ') (reverse monStr)
+    parseMonitorId = read . takeWhile (/= ':') . dropWhile (== ' ') $ monStr
+    parseMonitorName = reverse . takeWhile (/= ' ') . reverse $ monStr
 
 listBars :: IO [Bar]
 listBars = filter (isSuffixOf ".hs") <$> getDirectoryContents "xmobar"
@@ -39,8 +35,7 @@ listBars = filter (isSuffixOf ".hs") <$> getDirectoryContents "xmobar"
 listMonitors :: IO [Monitor]
 listMonitors = do
   output <- readCreateProcess (shell "xrandr --listmonitors") ""
-  let monitors = map parseMonitor . drop 1 . lines $ output
-   in return monitors
+  return . map parseMonitor . drop 1 . lines $ output
 
 printMonitor :: Monitor -> IO ()
 printMonitor mon = putStrLn $ "Processing monitor: " ++ monitorName mon
@@ -97,7 +92,8 @@ configureBars mon nmons nbars bars state = do
   if not $ isPrefixOf bs "continue"
     then do
       newState <- updateMonitor bars bs state
-      putStrLn $ "Current bars on monitor " ++ monName ++ ": " ++ joinBars newState
+      putStrLn $
+        "Current bars on monitor " ++ monName ++ ": " ++ joinBars newState
       configureBars mon nmons nbars bars newState
     else return state
   where
@@ -121,6 +117,4 @@ main = do
   monitors <- listMonitors
   updatedMonitors <- mapM (initialConfigureBars bars (length monitors)) monitors
   let monitorData = encode (M.fromList updatedMonitors)
-   in writeFile
-        (head args ++ "/bars.json")
-        (TL.unpack . TLE.decodeUtf8 $ monitorData)
+   in BL.writeFile (head args ++ "/bars.json") monitorData
