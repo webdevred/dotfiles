@@ -9,6 +9,7 @@ alacritty:.config/alacritty
 fish:.config/fish
 
 # developing & debugging
+misc/vimrc:.vimrc
 misc/ghci_config:.ghci
 misc/gdbinit:.config/gdb/gdbinit
 
