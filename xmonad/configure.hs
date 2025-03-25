@@ -1,14 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 import Data.Aeson (encode)
-import Data.Aeson.Types (Parser)
 import qualified Data.ByteString.Lazy as BL
 import Data.Char (isDigit)
 import Data.List (intercalate, isPrefixOf, isSuffixOf)
+import qualified Data.List as L
 import qualified Data.Map as M
-import Data.Map (Map)
-import GHC.Stack (withFrozenCallStack)
-import System.Directory (getDirectoryContents)
+import System.Directory (doesDirectoryExist, getDirectoryContents)
 import System.Environment (getArgs)
 import System.Process (readCreateProcess, shell)
 import Text.Printf (printf)
@@ -45,6 +43,7 @@ splitBy _ "" = []
 splitBy delimiterChar inputString = foldr f [""] inputString
   where
     f :: Char -> [String] -> [String]
+    f currentChar [] = error "huh"
     f currentChar allStrings@(partialString:handledStrings)
       | currentChar == delimiterChar = "" : allStrings
       | otherwise = (currentChar : partialString) : handledStrings
@@ -81,7 +80,7 @@ prompt _ 0 = ""
 prompt nbars 1 = "Add new bar or exit? (0-" ++ nbars ++ " or c)"
 prompt nbars 2 =
   "Add new bar or continue to last monitor? (0-" ++ nbars ++ " or c) "
-prompt nbars 3 =
+prompt nbars _ =
   "Add new bar or continue to next monitor? (0-" ++ nbars ++ " or c)"
 
 configureBars ::
@@ -100,6 +99,7 @@ configureBars mon nmons nbars bars state = do
     monName = monitorName mon
     joinBars = intercalate ", " . snd
 
+initialConfigureBars :: [Bar] -> Int -> Monitor -> IO MonitorState
 initialConfigureBars bars nmons mon = do
   _ <- printMonitor mon
   configureBars mon nmons nbars bars (show $ monitorId mon, [])
@@ -109,12 +109,35 @@ initialConfigureBars bars nmons mon = do
 indexList :: [Bar] -> [(Int, Bar)]
 indexList = zip [0 ..]
 
+if' :: Bool -> p -> p -> p
+if' True a _ = a
+if' False _ b = b
+
+validateConfigDir :: [String] -> IO (Maybe String)
+validateConfigDir args =
+  case L.uncons args of
+    Just (dir, _) -> do
+      exists <- doesDirectoryExist dir
+      return $ if' exists (Just dir) Nothing
+    Nothing -> return Nothing
+
+printBar :: (Int, String) -> IO ()
+printBar (i, bar) = putStrLn $ printf "%d: %s" i bar
+
+startBarSelector :: String -> IO ()
+startBarSelector configDir = do
+  bars <- listBars
+  mapM_ printBar $ indexList bars
+  mons <- listMonitors
+  updatedMonitors <- mapM (initialConfigureBars bars (length mons)) mons
+  BL.writeFile (configDir ++ "/bars.json") $ encode (M.fromList updatedMonitors)
+
 main :: IO ()
 main = do
   args <- getArgs
-  bars <- listBars
-  mapM_ (\(i, bar) -> putStrLn $ printf "%d: %s" i bar) $ indexList bars
-  monitors <- listMonitors
-  updatedMonitors <- mapM (initialConfigureBars bars (length monitors)) monitors
-  let monitorData = encode (M.fromList updatedMonitors)
-   in BL.writeFile (head args ++ "/bars.json") monitorData
+  configDir <- validateConfigDir args
+  case configDir of
+    Nothing ->
+      putStrLn
+        "please provide xmonad configuration directory and make sure it is exists"
+    Just configDir' -> startBarSelector configDir'
