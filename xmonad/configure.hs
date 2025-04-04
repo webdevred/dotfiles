@@ -1,16 +1,21 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-import Data.Aeson (encode)
+import Control.Exception (IOException, try)
+import Control.Monad (when)
+import Data.Aeson (decode, encode)
 import qualified Data.ByteString.Lazy as BL
+import Data.ByteString.Lazy (ByteString)
 import Data.Char (isDigit)
 import Data.List (intercalate, isPrefixOf, isSuffixOf)
 import qualified Data.List as L
 import qualified Data.Map as M
+import Data.Map (Map)
 import System.Directory (doesDirectoryExist, getDirectoryContents)
 import System.Environment (getArgs)
 import System.Process (readCreateProcess, shell)
-import Text.Printf (printf)
 import Text.Read (readEither)
+
+import Data.Maybe (fromMaybe)
 
 data Monitor =
   Monitor
@@ -18,6 +23,8 @@ data Monitor =
     , monitorId :: Int
     }
   deriving (Show)
+
+type Config = Map String [Bar]
 
 type Bar = String
 
@@ -86,23 +93,33 @@ prompt nbars _ =
 configureBars ::
      Monitor -> Int -> Int -> [Bar] -> MonitorState -> IO MonitorState
 configureBars mon nmons nbars bars state = do
+  when
+    (snd state /= [])
+    (putStrLn $ "Current bars on monitor " ++ monName ++ ": " ++ joinBars state)
   _ <- putStrLn $ prompt (show $ nbars - 1) $ nmons - monitorId mon
   bs <- getLine
   if not $ isPrefixOf bs "continue"
     then do
-      newState <- updateMonitor bars bs state
-      putStrLn $
-        "Current bars on monitor " ++ monName ++ ": " ++ joinBars newState
-      configureBars mon nmons nbars bars newState
+      updateMonitor bars bs state >>= configureBars mon nmons nbars bars
     else return state
   where
     monName = monitorName mon
     joinBars = intercalate ", " . snd
 
-initialConfigureBars :: [Bar] -> Int -> Monitor -> IO MonitorState
-initialConfigureBars bars nmons mon = do
+tryReadConfigFile :: FilePath -> IO (Either IOException ByteString)
+tryReadConfigFile = try . BL.readFile
+
+decodeConfig :: FilePath -> IO Config
+decodeConfig filename = do
+  content <- tryReadConfigFile filename
+  case content of
+    Right content -> return . fromMaybe M.empty . decode $ content
+    Left _ -> return M.empty
+
+initialConfigureBars :: [Bar] -> Int -> [Bar] -> Monitor -> IO MonitorState
+initialConfigureBars selectedBars nmons bars mon = do
   _ <- printMonitor mon
-  configureBars mon nmons nbars bars (show $ monitorId mon, [])
+  configureBars mon nmons nbars bars (show $ monitorId mon, selectedBars)
   where
     nbars = length bars
 
@@ -118,19 +135,27 @@ validateConfigDir args =
   case L.uncons args of
     Just (dir, _) -> do
       exists <- doesDirectoryExist dir
-      return $ if' exists (Just dir) Nothing
+      return $ if' exists (Just $ dir ++ "/bars.json") Nothing
     Nothing -> return Nothing
 
 printBar :: (Int, String) -> IO ()
-printBar (i, bar) = putStrLn $ printf "%d: %s" i bar
+printBar (i, bar) = putStrLn $ show i ++ ": " ++ bar
+
+fetchMonConfig :: Monitor -> Map String [Bar] -> [Bar]
+fetchMonConfig mon = fromMaybe [] . M.lookup (show $ monitorId mon)
+
+barSelectorForMonitor :: Config -> [Bar] -> Int -> Monitor -> IO MonitorState
+barSelectorForMonitor config bars nmons mon =
+  initialConfigureBars (fetchMonConfig mon config) nmons bars mon
 
 startBarSelector :: String -> IO ()
-startBarSelector configDir = do
+startBarSelector configFile = do
   bars <- listBars
   mapM_ printBar $ indexList bars
   mons <- listMonitors
-  updatedMonitors <- mapM (initialConfigureBars bars (length mons)) mons
-  BL.writeFile (configDir ++ "/bars.json") $ encode (M.fromList updatedMonitors)
+  config <- decodeConfig configFile
+  updatedMonitors <- mapM (barSelectorForMonitor config bars $ length mons) mons
+  BL.writeFile configFile $ encode (M.fromList updatedMonitors)
 
 main :: IO ()
 main = do
@@ -140,4 +165,4 @@ main = do
     Nothing ->
       putStrLn
         "please provide xmonad configuration directory and make sure it is exists"
-    Just configDir' -> startBarSelector configDir'
+    Just configFile -> startBarSelector configFile
