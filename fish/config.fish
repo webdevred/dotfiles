@@ -2,6 +2,7 @@ set -g fish_greeting
 
 set -x EDITOR vim
 set -x SYSTEMD_EDITOR vim
+set -x MANPAGER "vim -M +MANPAGER - "
 
 set -x vi
 

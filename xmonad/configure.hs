@@ -99,8 +99,7 @@ configureBars mon nmons nbars bars state = do
   _ <- putStrLn $ prompt (show $ nbars - 1) $ nmons - monitorId mon
   bs <- getLine
   if not $ isPrefixOf bs "continue"
-    then do
-      updateMonitor bars bs state >>= configureBars mon nmons nbars bars
+    then updateMonitor bars bs state >>= configureBars mon nmons nbars bars
     else return state
   where
     monName = monitorName mon
