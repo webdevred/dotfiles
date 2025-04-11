@@ -1,8 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 import Control.Exception (IOException, try)
-import Control.Monad (when)
 import Data.Aeson (decode, encode)
+import Data.Bool (bool)
 import qualified Data.ByteString.Lazy as BL
 import Data.ByteString.Lazy (ByteString)
 import Data.Char (isDigit)
@@ -10,12 +10,12 @@ import Data.List (intercalate, isPrefixOf, isSuffixOf)
 import qualified Data.List as L
 import qualified Data.Map as M
 import Data.Map (Map)
+import Data.Maybe (fromMaybe)
 import System.Directory (doesDirectoryExist, getDirectoryContents)
 import System.Environment (getArgs)
+import System.Exit (exitFailure)
 import System.Process (readCreateProcess, shell)
 import Text.Read (readEither)
-
-import Data.Maybe (fromMaybe)
 
 data Monitor =
   Monitor
@@ -50,7 +50,7 @@ splitBy _ "" = []
 splitBy delimiterChar inputString = foldr f [""] inputString
   where
     f :: Char -> [String] -> [String]
-    f currentChar [] = error "huh"
+    f _ [] = error "huh"
     f currentChar allStrings@(partialString:handledStrings)
       | currentChar == delimiterChar = "" : allStrings
       | otherwise = (currentChar : partialString) : handledStrings
@@ -69,41 +69,55 @@ readBarIndex i input
   where
     outOfBoundMsg b =
       "bar index out of bounds: " ++
-      show b ++ ", only (0- " ++ show (i - 1) ++ ")"
+      show b ++ ", only (0-" ++ show (i - 1) ++ ")"
 
 type MonitorState = (String, [String])
 
-updateMonitor :: [Bar] -> String -> MonitorState -> IO MonitorState
-updateMonitor bars bs (monId, barAcc) =
-  let barIndexesEither = mapM (readBarIndex $ length bars) . splitBy ',' $ bs
-   in case barIndexesEither of
-        Right barIndexes -> return (monId, barAcc ++ map (bars !!) barIndexes)
-        Left err -> do
-          putStrLn $ "error: " ++ err
-          return (show monId, barAcc)
+updateMonitor :: [Bar] -> [Int] -> MonitorState -> IO MonitorState
+updateMonitor bars barIndexes (monId, barAcc) =
+  return (monId, barAcc `L.union` map (bars !!) barIndexes)
 
-prompt :: String -> Int -> String
-prompt _ 0 = ""
-prompt nbars 1 = "Add new bar or exit? (0-" ++ nbars ++ " or c)"
-prompt nbars 2 =
-  "Add new bar or continue to last monitor? (0-" ++ nbars ++ " or c) "
-prompt nbars _ =
-  "Add new bar or continue to next monitor? (0-" ++ nbars ++ " or c)"
+prompt :: Int -> Int -> String
+prompt nbars nmons
+  | nmons == 0 = "Add new bar or exit?" ++ barsRange
+  | nmons == 1 = "Add new bar or continue to last monitor?" ++ barsRange
+  | otherwise = "Add new bar or continue to next monitor?" ++ barsRange
+  where
+    barsRange = " (0-" ++ show (nbars - 1) ++ ", c or d): "
+
+data Action
+  = Continue
+  | DeleteBars
+  | SelectBars [Int]
+
+selectAction :: Int -> Either IOException Bar -> Either String Action
+selectAction nbars (Right bs)
+  | bs == "" = Left "empty input"
+  | bs `isPrefixOf` "continue" = Right Continue
+  | bs `isPrefixOf` "delete" = Right DeleteBars
+  | otherwise = fmap SelectBars . mapM (readBarIndex nbars) . splitBy ',' $ bs
+selectAction _ (Left _) = Right Continue
+
+printSelectedBars :: MonitorState -> String -> IO ()
+printSelectedBars (_, bars) monName
+  | null bars = putStrLn $ "No bars monitor " ++ monName
+  | otherwise =
+    putStrLn $
+    "Current bars on monitor " ++ monName ++ ": " ++ intercalate ", " bars
 
 configureBars ::
-     Monitor -> Int -> Int -> [Bar] -> MonitorState -> IO MonitorState
-configureBars mon nmons nbars bars state = do
-  when
-    (snd state /= [])
-    (putStrLn $ "Current bars on monitor " ++ monName ++ ": " ++ joinBars state)
-  _ <- putStrLn $ prompt (show $ nbars - 1) $ nmons - monitorId mon
-  bs <- getLine
-  if not $ isPrefixOf bs "continue"
-    then updateMonitor bars bs state >>= configureBars mon nmons nbars bars
-    else return state
+     Int -> Monitor -> Int -> [Bar] -> MonitorState -> IO MonitorState
+configureBars nmons mon nbars bars state = do
+  printSelectedBars state $ monitorName mon
+  putStrLn . prompt nbars $ nmons - monitorId mon - 1
+  bs <- try getLine
+  case selectAction nbars bs of
+    Left err -> putStrLn ("error: " ++ err) >> configureBars' state
+    Right Continue -> return state
+    Right DeleteBars -> configureBars' (fst state, [])
+    Right (SelectBars bs') -> updateMonitor bars bs' state >>= configureBars'
   where
-    monName = monitorName mon
-    joinBars = intercalate ", " . snd
+    configureBars' = configureBars nmons mon nbars bars
 
 tryReadConfigFile :: FilePath -> IO (Either IOException ByteString)
 tryReadConfigFile = try . BL.readFile
@@ -112,30 +126,23 @@ decodeConfig :: FilePath -> IO Config
 decodeConfig filename = do
   content <- tryReadConfigFile filename
   case content of
-    Right content -> return . fromMaybe M.empty . decode $ content
+    Right content' -> return . fromMaybe M.empty . decode $ content'
     Left _ -> return M.empty
 
-initialConfigureBars :: [Bar] -> Int -> [Bar] -> Monitor -> IO MonitorState
-initialConfigureBars selectedBars nmons bars mon = do
-  _ <- printMonitor mon
-  configureBars mon nmons nbars bars (show $ monitorId mon, selectedBars)
+initialConfigureBars :: Int -> Monitor -> [Bar] -> [Bar] -> IO MonitorState
+initialConfigureBars nmons mon bars selectedBars =
+  printMonitor mon >> configureBars nmons mon nbars bars state
   where
+    state = (show $ monitorId mon, selectedBars)
     nbars = length bars
 
 indexList :: [Bar] -> [(Int, Bar)]
 indexList = zip [0 ..]
 
-if' :: Bool -> p -> p -> p
-if' True a _ = a
-if' False _ b = b
-
 validateConfigDir :: [String] -> IO (Maybe String)
-validateConfigDir args =
-  case L.uncons args of
-    Just (dir, _) -> do
-      exists <- doesDirectoryExist dir
-      return $ if' exists (Just $ dir ++ "/bars.json") Nothing
-    Nothing -> return Nothing
+validateConfigDir (d:_) =
+  doesDirectoryExist d >>= bool (pure Nothing) (pure . Just $ d ++ "/bars.json")
+validateConfigDir _ = pure Nothing
 
 printBar :: (Int, String) -> IO ()
 printBar (i, bar) = putStrLn $ show i ++ ": " ++ bar
@@ -145,16 +152,21 @@ fetchMonConfig mon = fromMaybe [] . M.lookup (show $ monitorId mon)
 
 barSelectorForMonitor :: Config -> [Bar] -> Int -> Monitor -> IO MonitorState
 barSelectorForMonitor config bars nmons mon =
-  initialConfigureBars (fetchMonConfig mon config) nmons bars mon
+  initialConfigureBars nmons mon bars $ fetchMonConfig mon config
+
+printBars :: [Bar] -> IO ()
+printBars bars
+  | null bars = putStrLn "no bars found" >> exitFailure
+  | otherwise = putStrLn "Available bars:" >> mapM_ printBar (indexList bars)
 
 startBarSelector :: String -> IO ()
 startBarSelector configFile = do
   bars <- listBars
-  mapM_ printBar $ indexList bars
+  printBars bars
   mons <- listMonitors
   config <- decodeConfig configFile
   updatedMonitors <- mapM (barSelectorForMonitor config bars $ length mons) mons
-  BL.writeFile configFile $ encode (M.fromList updatedMonitors)
+  BL.writeFile configFile . encode . M.fromList $ updatedMonitors
 
 main :: IO ()
 main = do
