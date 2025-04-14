@@ -1,0 +1,20 @@
+# -*- mode: gitconfig-mode
+
+[include]
+	path = ~/.config/git/local.gitconfig
+
+[core]
+	excludesfile = ~/.config/git/gitignore_global
+
+[merge]
+	conflictStyle = diff3
+
+[color.diff]
+        commit = magenta
+
+[log]
+	decorate = full
+
+[alias]
+	pf = push --force
+	tree = log --graph --decorate --pretty=oneline --abbrev-commit --all

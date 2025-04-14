@@ -1,0 +1,13 @@
+# Vim temporary, swap, backup, and undo files
+*.swp
+*.swo
+[._]*.sw[a-p]
+*~
+*.un~
+.viminfo
+
+# Emacs auto-save, backup, and lock files
+#*#
+*~
+
+.#*

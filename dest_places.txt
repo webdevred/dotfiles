@@ -12,6 +12,7 @@ fish:.config/fish
 misc/vimrc:.vimrc
 misc/ghci_config:.ghci
 misc/gdbinit:.config/gdb/gdbinit
+git:.config/git
 
 # media player
 mpv:.config/mpv
