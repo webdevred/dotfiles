@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 import Control.Exception (IOException, try)
+import Control.Monad (when)
 import Data.Aeson (decode, encode)
 import Data.Bool (bool)
 import qualified Data.ByteString.Lazy as BL
@@ -14,6 +15,7 @@ import Data.Maybe (fromMaybe)
 import System.Directory (doesDirectoryExist, getDirectoryContents)
 import System.Environment (getArgs)
 import System.Exit (exitFailure)
+import System.IO
 import System.Process (readCreateProcess, shell)
 import Text.Read (readEither)
 
@@ -86,38 +88,59 @@ prompt nbars nmons
     barsRange = " (0-" ++ show (nbars - 1) ++ ", c or d): "
 
 data Action
-  = Continue
+  = Retry
+  | NextMonitor
   | DeleteBars
   | SelectBars [Int]
 
-selectAction :: Int -> Either IOException Bar -> Either String Action
-selectAction nbars (Right bs)
-  | bs == "" = Left "empty input"
-  | bs `isPrefixOf` "continue" = Right Continue
+selectAction :: Int -> Maybe Bar -> Either String Action
+selectAction nbars (Just bs)
+  | bs == "" = Right NextMonitor
+  | bs `isPrefixOf` "continue" = Right NextMonitor
   | bs `isPrefixOf` "delete" = Right DeleteBars
   | otherwise = fmap SelectBars . mapM (readBarIndex nbars) . splitBy ',' $ bs
-selectAction _ (Left _) = Right Continue
+selectAction _ Nothing = Left "please enter a command"
 
 printSelectedBars :: MonitorState -> String -> IO ()
 printSelectedBars (_, bars) monName
-  | null bars = putStrLn $ "No bars monitor " ++ monName
+  | null bars = putStrLn $ "No bars monitor on " ++ monName
   | otherwise =
     putStrLn $
     "Current bars on monitor " ++ monName ++ ": " ++ intercalate ", " bars
+
+getLine' :: IO (Maybe String)
+getLine' = do
+  c <- getChar
+  putNewlineIFInline c
+  checkFirstChar c
+  where
+    putNewlineIFInline c = when (c `elem` ['\EOT', '\t']) (putChar '\n')
+    endOfInput = ['\EOT', '\t', '\n']
+    checkFirstChar c
+      | c == '\EOT' = return $ Just ""
+      | c `elem` endOfInput = return Nothing
+      | otherwise = Just . reverse <$> gather [c]
+    gather xs = do
+      c <- getChar
+      if c `elem` endOfInput
+        then putNewlineIFInline c >> return xs
+        else gather (c : xs)
 
 configureBars ::
      Int -> Monitor -> Int -> [Bar] -> MonitorState -> IO MonitorState
 configureBars nmons mon nbars bars state = do
   printSelectedBars state $ monitorName mon
   putStrLn . prompt nbars $ nmons - monitorId mon - 1
-  bs <- try getLine
+  bs <- getLine'
   case selectAction nbars bs of
-    Left err -> putStrLn ("error: " ++ err) >> configureBars' state
-    Right Continue -> return state
-    Right DeleteBars -> configureBars' (fst state, [])
-    Right (SelectBars bs') -> updateMonitor bars bs' state >>= configureBars'
+    Right Retry -> continue state
+    Right NextMonitor -> return state
+    Right DeleteBars -> continue (fst state, [])
+    Right (SelectBars bs') -> updateMonitor bars bs' state >>= continue
+    Left err -> putErrAndContinue err >> continue state
   where
-    configureBars' = configureBars nmons mon nbars bars
+    putErrAndContinue err = putStrLn ("Error: " ++ err)
+    continue = configureBars nmons mon nbars bars
 
 tryReadConfigFile :: FilePath -> IO (Either IOException ByteString)
 tryReadConfigFile = try . BL.readFile
@@ -156,7 +179,7 @@ barSelectorForMonitor config bars nmons mon =
 
 printBars :: [Bar] -> IO ()
 printBars bars
-  | null bars = putStrLn "no bars found" >> exitFailure
+  | null bars = putStrLn "No bars found" >> exitFailure
   | otherwise = putStrLn "Available bars:" >> mapM_ printBar (indexList bars)
 
 startBarSelector :: String -> IO ()
@@ -170,10 +193,11 @@ startBarSelector configFile = do
 
 main :: IO ()
 main = do
+  hSetBuffering stdin NoBuffering
   args <- getArgs
   configDir <- validateConfigDir args
   case configDir of
     Nothing ->
       putStrLn
-        "please provide xmonad configuration directory and make sure it is exists"
+        "Please provide xmonad configuration directory and make sure it is exists"
     Just configFile -> startBarSelector configFile
