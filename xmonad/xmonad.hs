@@ -1,30 +1,30 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ImportQualifiedPost #-}
+{-# OPTIONS_GHC -fno-warn-missing-signatures #-}
+{-# OPTIONS_GHC -fno-warn-incomplete-uni-patterns #-}
 
 -- a simple configuration
 import XMonad hiding ((|||))
 import XMonad.Util.SpawnOnce
 
+import Data.Bool (bool)
 import XMonad.Hooks.DynamicLog
 import XMonad.Hooks.StatusBar
-import XMonad.Hooks.StatusBar.PP
 
 import Control.Monad (filterM)
 import XMonad.Actions.DynamicWorkspaces (addHiddenWorkspace)
 import XMonad.Hooks.EwmhDesktops
 import XMonad.Hooks.ManageDocks
 import XMonad.Hooks.ManageHelpers
-import XMonad.Hooks.WindowSwallowing
-import XMonad.Layout.Fullscreen
 import XMonad.Layout.LayoutCombinators
-import XMonad.Layout.LayoutModifier
 import XMonad.Layout.Named
 import XMonad.Layout.NoBorders
 import XMonad.Layout.Spacing
-import qualified XMonad.StackSet as W
+import XMonad.StackSet qualified as W
 import XMonad.Util.Loggers
 import XMonad.Util.NamedScratchpad
-import XMonad.Util.Run (runProcessWithInput, spawnPipe)
+import XMonad.Util.Run (runProcessWithInput)
 
 import Data.Aeson
 import Data.Aeson.Types (Parser)
@@ -32,9 +32,9 @@ import Data.ByteString.Lazy (ByteString)
 import Data.Ord (Down(..))
 import Data.String (fromString)
 import Data.Text (Text)
-import qualified Data.Text as T (unpack)
-import qualified Data.Text.Lazy as TL (strip, unpack)
-import qualified Data.Text.Lazy.Encoding as TLE (decodeUtf8)
+import Data.Text qualified as T (unpack)
+import Data.Text.Lazy qualified as TL (strip, unpack)
+import Data.Text.Lazy.Encoding qualified as TLE (decodeUtf8)
 import Text.Read (readMaybe)
 
 import Data.Int (Int32)
@@ -43,14 +43,13 @@ import Numeric (showHex)
 
 import GHC.Stack (withFrozenCallStack)
 
-import qualified Data.ByteString.Lazy as BL
+import Data.ByteString.Lazy qualified as BL
 
-import Control.Exception (Exception, IOException, catch, throw, try)
-import Data.Char (chr, isAscii, toLower)
-import Data.List (find, genericLength, isInfixOf, isPrefixOf, sortBy, sortOn)
+import Control.Exception (IOException, try)
+import Data.Char (chr, toLower)
+import Data.List (find, genericLength, sortOn)
 import Data.Maybe (fromMaybe)
 import System.Directory (XdgDirectory(XdgConfig), getXdgDirectory)
-import System.IO (hPutStrLn)
 
 import XMonad.Util.WindowProperties (getProp32s)
 
@@ -58,10 +57,8 @@ import Data.Hashable
 
 import Graphics.X11.ExtraTypes.XF86
 
-import qualified Data.Map as Map
+import Data.Map qualified as Map
 import Data.Map (Map)
-
-import Data.Ratio
 
 import XMonad.Actions.GridSelect
 
@@ -72,7 +69,7 @@ decodeBars str =
   case decode str of
     Just str' -> str'
     Nothing ->
-      withFrozenCallStack $ error $ "can not decode \"" ++ faultyData ++ "\""
+      withFrozenCallStack $ error ("can not decode \"" ++ faultyData ++ "\"")
   where
     faultyData = TL.unpack . TL.strip . TLE.decodeUtf8 $ str
 
@@ -87,13 +84,13 @@ listConfigBars = do
   where
     flattenConfigBars xs = [(a, b) | (a, bs) <- xs, b <- bs]
     tryReadFile :: FilePath -> IO (Either IOException ByteString)
-    tryReadFile path = try $ BL.readFile $ path ++ "/bars.json"
+    tryReadFile path = try . BL.readFile $ path ++ "/bars.json"
 
 -- main function
 main :: IO ()
 main = do
   configBars <- listConfigBars
-  let myBars = mconcat $ map xmobarStatusBar configBars
+  let myBars = foldr ((<>) . xmobarStatusBar) mempty configBars
    in xmonad . ewmhFullscreen . ewmh . docks . withSB myBars $ myConfig
 
 -- colors
@@ -114,8 +111,7 @@ xmobarStatusBar (screen, bar) = statusBarProp cmd $ pure myXmobarPP
     cmd = "xmobar -x" ++ screen ++ " ~/.config/xmobar/" ++ bar
 
 untitledIfNull :: String -> String
-untitledIfNull "" = "untitled"
-untitledIfNull v = v
+untitledIfNull v = bool v "untitled" $ null v
 
 excludeEmojis :: String -> String
 excludeEmojis = filter isEmoji
@@ -126,12 +122,9 @@ excludeEmojis = filter isEmoji
       , (0x1F680, 0x1F6FF) -- Transport and Map Symbols
       , (0x1F1E6, 0x1F1FF) -- Regional Indicator Symbols
       ]
+    charInRange c (start, end) = c `elem` [chr x | x <- [start .. end]]
     isEmoji :: Char -> Bool
-    isEmoji c =
-      not
-        (any
-           (\(start, end) -> c `elem` [chr x | x <- [start .. end]])
-           emojiRanges)
+    isEmoji c = not $ any (charInRange c) emojiRanges
 
 myXmobarPP :: PP
 myXmobarPP =
@@ -159,9 +152,6 @@ myXmobarPP =
 -- my preffered terminal
 myTerminal :: String
 myTerminal = "alacritty"
-
-myTerminalClass :: String
-myTerminalClass = "Alacritty"
 
 -- rofi
 runRofi :: MonadIO m => String -> m ()
@@ -240,12 +230,10 @@ randomInRange :: Int -> Int -> Int
 randomInRange x y = abs $ hashWithSalt y y `mod` x
 
 generateColor :: String -> (Int, Int, Int)
-generateColor string =
-  cond
-    [ (rem hash_value 3 == 0, (255, 183 + pink_range, 193 + pink_range))
-    , (rem hash_value 3 == 1, (255, 99 + red_range, 71 + red_range))
-    , (True, (128 + purple_range, 0, 128 + purple_range))
-    ]
+generateColor string
+  | rem hash_value 3 == 0 = (255, 183 + pink_range, 193 + pink_range)
+  | rem hash_value 3 == 1 = (255, 99 + red_range, 71 + red_range)
+  | otherwise = (128 + purple_range, 0, 128 + purple_range)
   where
     pink_range = randomInRange 62 hash_value
     red_range = randomInRange 184 hash_value
@@ -271,8 +259,8 @@ spawnSelected' lst =
       , gs_navigate = myGridNavigation
       , gs_bordercolor = pink
       }
-    lst >>=
-  flip whenJust spawn
+    lst
+    >>= flip whenJust spawn
 
 -- my audio sink GridSelect.
 -- I want to do something more complicated and funny in the future
@@ -281,14 +269,12 @@ type SinkName = Text
 
 type SinkDesc = String
 
-data AudioSink =
-  AudioSink
-    { sink_name :: SinkName
-    , sink_desc :: SinkDesc
-    , sink_active :: Bool
-    , sink_mute :: Bool
-    }
-  deriving (Show)
+data AudioSink = AudioSink
+  { sink_name :: SinkName
+  , sink_desc :: SinkDesc
+  , sink_active :: Bool
+  , sink_mute :: Bool
+  } deriving (Show)
 
 instance FromJSON AudioSink where
   parseJSON =
@@ -312,13 +298,11 @@ activeSinkNotHead lst = lst
 
 audioGridColorizer ::
      Maybe AudioSink -> [AudioSink] -> SinkName -> Bool -> X (String, String)
-audioGridColorizer activeSink mutedSinks this hovering =
-  cond
-    [ (hovering, return (pink, "#000000"))
-    , (isSinkMuted, return ("#ff0000", "#000000"))
-    , (isSinkActive, return (pink, white))
-    , (True, return (magenta, white))
-    ]
+audioGridColorizer activeSink mutedSinks this hovering
+  | hovering = return (pink, "#000000")
+  | isSinkMuted = return ("#ff0000", "#000000")
+  | isSinkActive = return (pink, white)
+  | otherwise = return (magenta, white)
   where
     isSinkActive = (sink_name <$> activeSink) == Just this
     isSinkMuted = any (\sink -> sink_name sink == this) mutedSinks
@@ -328,12 +312,12 @@ decodeContent str =
   case decode str of
     Just str' -> str'
     Nothing ->
-      withFrozenCallStack $ error $ "can not decode \"" ++ faultyData ++ "\""
+      withFrozenCallStack $ error ("can not decode \"" ++ faultyData ++ "\"")
   where
     faultyData = TL.unpack . TL.strip . TLE.decodeUtf8 $ str
 
-audioSinkMetrics :: String -> IO (Map SinkName Int)
-audioSinkMetrics filename = do
+getAudioSinkMetrics :: String -> IO (Map SinkName Int)
+getAudioSinkMetrics filename = do
   content <- tryReadFile
   case content of
     Right content' -> return . decodeContent $ content'
@@ -359,12 +343,12 @@ incrementKey k m
     currentValue = fromMaybe 0 $ Map.lookup k m
 
 sortingFun :: Map SinkName Int -> AudioSink -> Down (Maybe Int)
-sortingFun audioSinkMetrics sink =
-  Down $ Map.lookup (sink_name sink) audioSinkMetrics
+sortingFun audioSinkMetrics' sink =
+  Down $ Map.lookup (sink_name sink) audioSinkMetrics'
 
 doAudioGridSelect :: String -> [AudioSink] -> X ()
 doAudioGridSelect configLocation sinks = do
-  audioSinkMetrics <- liftIO $ audioSinkMetrics filename
+  audioSinkMetrics <- liftIO $ getAudioSinkMetrics filename
   let mutedSinks = filter sink_mute sinks
       activeSink = find sink_active sinks
       gridConfig =
@@ -375,13 +359,14 @@ doAudioGridSelect configLocation sinks = do
           , gs_bordercolor = white
           }
       prepareSinks =
-        map sinkToTuple .
-        activeSinkNotHead . sortOn (sortingFun audioSinkMetrics)
+        map sinkToTuple
+          . activeSinkNotHead
+          . sortOn (sortingFun audioSinkMetrics)
   sinkMaybe <- gridselect gridConfig $ prepareSinks sinks
   case sinkMaybe of
     Just sink -> do
-      liftIO $
-        BL.writeFile filename (encode $ incrementKey sink audioSinkMetrics)
+      liftIO
+        $ BL.writeFile filename (encode $ incrementKey sink audioSinkMetrics)
       spawn $ "pactl set-default-sink " ++ T.unpack sink
     Nothing -> return ()
   where
@@ -393,12 +378,10 @@ audioGridSelect = do
   output <- runProcessWithInput "pactl" ["-f", "json", "list", "sinks"] ""
   whenJust (decode . fromString $ output) $ doAudioGridSelect configLocation
 
-data AudioWindow =
-  AudioWindow
-    { input_pid :: Int32
-    , input_corked :: Bool
-    }
-  deriving (Show)
+data AudioWindow = AudioWindow
+  { input_pid :: Int32
+  , input_corked :: Bool
+  } deriving (Show)
 
 instance FromJSON AudioWindow where
   parseJSON =
@@ -417,8 +400,10 @@ comparePid aws w = do
   mPid <- getProp32s "_NET_WM_PID" w
   case mPid of
     Just [x] ->
-      return $
-      any (\aw -> fromIntegral x == input_pid aw && not (input_corked aw)) aws
+      return
+        $ any
+            (\aw -> fromIntegral x == input_pid aw && not (input_corked aw))
+            aws
     _ -> return False
 
 doAudioWindowGridSelect :: [AudioWindow] -> X ()
@@ -457,8 +442,6 @@ getWindowTitles = mapM (runQuery title)
 
 windowGridSelect :: X ()
 windowGridSelect = do
-  windows <- getAllWindows
-  windowTitles <- getWindowTitles windows
   let gridConfig =
         def
           { gs_colorizer = fromClassName'
@@ -504,8 +487,8 @@ myKeys conf@(XConfig {modMask = modm}) =
        , ( (0, xF86XK_AudioMute)
          , spawn "pactl set-sink-mute @DEFAULT_SINK@ toggle")
        , ((modm, xK_F1), namedScratchpadAction scratchpads "emacs-scratch")
-       ]) $
-  keys def conf
+       ])
+    $ keys def conf
 
 -- this takes the configLocation that is fetched in main
 myConfig =
@@ -524,24 +507,21 @@ myConfig =
     }
 
 doShiftDynamic :: WorkspaceId -> ManageHook
-doShiftDynamic ws = do
-  liftX $ addHiddenWorkspace ws
-  doShift ws
+doShiftDynamic ws = liftX (addHiddenWorkspace ws) >> doShift ws
 
 myManageHook :: ManageHook
 myManageHook =
   composeAll
     [ className =? "mpv" --> (doFullFloat <+> doShift "1")
     , className =? "discord" --> doShift "2"
-    , className =? "steam" <&&> (not <$> title =? "Steam") -->
-      (hasBorder False <+> doRectFloat (W.RationalRect 0.1 0.1 0.2 0.8))
+    , className
+        =? "steam"
+        <&&> (not <$> title =? "Steam")
+        --> (hasBorder False <+> doRectFloat (W.RationalRect 0.1 0.1 0.2 0.8))
     , className =? "firefox" <&&> resource =? "Toolkit" --> doFullFloat
     , className =? "cs2" --> doShiftDynamic "game"
-    ] <+>
-  namedScratchpadManageHook scratchpads
-
-myHandleEventHook =
-  swallowEventHook (className =? myTerminalClass) (return True)
+    ]
+    <+> namedScratchpadManageHook scratchpads
 
 scratchpads :: [NamedScratchpad]
 scratchpads =
@@ -557,17 +537,12 @@ scratchpads =
 -- the space and then I can have a few windows on the side.
 -- That is why I like Big Master Tall
 myLayouts =
-  named "Tall" (spacing 10 $ Tall 1 (1 / 4) (1 / 2)) |||
-  named "Big Master Tall" (spacing 10 $ Tall 1 0 (2 / 3)) ||| Full
+  named "Tall" (spacing 20 $ Tall 1 (1 / 4) (1 / 2))
+    ||| named "Big Master Tall" (spacing 20 $ Tall 1 0 (2 / 3))
+    ||| Full
 
 -- start picom with my config and set my background using wpc
+myStartup :: X ()
 myStartup = do
   spawnOnce "picom"
   spawnOnce "wpc -b"
-
--- lisp like cond
-cond :: [(Bool, a)] -> a
-cond conditions =
-  case find fst conditions of
-    Just (_, result) -> result
-    Nothing -> error "No true condition could be found in cond"

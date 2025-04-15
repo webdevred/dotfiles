@@ -19,12 +19,10 @@ import System.IO
 import System.Process (readCreateProcess, shell)
 import Text.Read (readEither)
 
-data Monitor =
-  Monitor
-    { monitorName :: String
-    , monitorId :: Int
-    }
-  deriving (Show)
+data Monitor = Monitor
+  { monitorName :: String
+  , monitorId :: Int
+  } deriving (Show)
 
 type Config = Map String [Bar]
 
@@ -70,8 +68,11 @@ readBarIndex i input
   | otherwise = Left $ "invalid input (only digits allowed): " ++ show input
   where
     outOfBoundMsg b =
-      "bar index out of bounds: " ++
-      show b ++ ", only (0-" ++ show (i - 1) ++ ")"
+      "bar index out of bounds: "
+        ++ show b
+        ++ ", only (0-"
+        ++ show (i - 1)
+        ++ ")"
 
 type MonitorState = (String, [String])
 
@@ -105,8 +106,8 @@ printSelectedBars :: MonitorState -> String -> IO ()
 printSelectedBars (_, bars) monName
   | null bars = putStrLn $ "No bars monitor on " ++ monName
   | otherwise =
-    putStrLn $
-    "Current bars on monitor " ++ monName ++ ": " ++ intercalate ", " bars
+    putStrLn
+      $ "Current bars on monitor " ++ monName ++ ": " ++ intercalate ", " bars
 
 getLine' :: IO (Maybe String)
 getLine' = do
