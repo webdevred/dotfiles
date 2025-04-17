@@ -40,7 +40,7 @@ listBars = filter (isSuffixOf ".hs") <$> getDirectoryContents "xmobar"
 listMonitors :: IO [Monitor]
 listMonitors = do
   output <- readCreateProcess (shell "xrandr --listmonitors") ""
-  return . map parseMonitor . drop 1 . lines $ output
+  pure . map parseMonitor . drop 1 . lines $ output
 
 printMonitor :: Monitor -> IO ()
 printMonitor mon = putStrLn $ "Processing monitor: " ++ monitorName mon
@@ -78,7 +78,7 @@ type MonitorState = (String, [String])
 
 updateMonitor :: [Bar] -> [Int] -> MonitorState -> IO MonitorState
 updateMonitor bars barIndexes (monId, barAcc) =
-  return (monId, barAcc `L.union` map (bars !!) barIndexes)
+  pure (monId, barAcc `L.union` map (bars !!) barIndexes)
 
 prompt :: Int -> Int -> String
 prompt nbars nmons
@@ -118,13 +118,13 @@ getLine' = do
     putNewlineIFInline c = when (c `elem` ['\EOT', '\t']) (putChar '\n')
     endOfInput = ['\EOT', '\t', '\n']
     checkFirstChar c
-      | c == '\EOT' = return $ Just ""
-      | c `elem` endOfInput = return Nothing
+      | c == '\EOT' = pure $ Just ""
+      | c `elem` endOfInput = pure Nothing
       | otherwise = Just . reverse <$> gather [c]
     gather xs = do
       c <- getChar
       if c `elem` endOfInput
-        then putNewlineIFInline c >> return xs
+        then putNewlineIFInline c >> pure xs
         else gather (c : xs)
 
 configureBars ::
@@ -135,7 +135,7 @@ configureBars nmons mon nbars bars state = do
   bs <- getLine'
   case selectAction nbars bs of
     Right Retry -> continue state
-    Right NextMonitor -> return state
+    Right NextMonitor -> pure state
     Right DeleteBars -> continue (fst state, [])
     Right (SelectBars bs') -> updateMonitor bars bs' state >>= continue
     Left err -> putErrAndContinue err >> continue state
@@ -150,8 +150,8 @@ decodeConfig :: FilePath -> IO Config
 decodeConfig filename = do
   content <- tryReadConfigFile filename
   case content of
-    Right content' -> return . fromMaybe M.empty . decode $ content'
-    Left _ -> return M.empty
+    Right content' -> pure . fromMaybe M.empty . decode $ content'
+    Left _ -> pure M.empty
 
 initialConfigureBars :: Int -> Monitor -> [Bar] -> [Bar] -> IO MonitorState
 initialConfigureBars nmons mon bars selectedBars =

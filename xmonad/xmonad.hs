@@ -79,8 +79,8 @@ listConfigBars = do
   content <- tryReadFile path
   case content of
     Right content' ->
-      return . flattenConfigBars . Map.assocs . decodeBars $ content'
-    Left _ -> return []
+      pure . flattenConfigBars . Map.assocs . decodeBars $ content'
+    Left _ -> pure []
   where
     flattenConfigBars xs = [(a, b) | (a, bs) <- xs, b <- bs]
     tryReadFile :: FilePath -> IO (Either IOException ByteString)
@@ -122,7 +122,7 @@ excludeEmojis = filter isEmoji
       , (0x1F680, 0x1F6FF) -- Transport and Map Symbols
       , (0x1F1E6, 0x1F1FF) -- Regional Indicator Symbols
       ]
-    charInRange c (start, end) = c `elem` [chr x | x <- [start .. end]]
+    charInRange c (start, end) = c `elem` map chr [start .. end]
     isEmoji :: Char -> Bool
     isEmoji c = not $ any (charInRange c) emojiRanges
 
@@ -246,8 +246,8 @@ invertColor (r, g, b) = (255 - r, 255 - g, 255 - b)
 pinkColorizer :: String -> Bool -> X (String, String)
 pinkColorizer this hovering =
   if hovering
-    then return (pink, white)
-    else return (rgbToHex bgColor, rgbToHex . invertColor $ bgColor)
+    then pure (pink, white)
+    else pure (rgbToHex bgColor, rgbToHex . invertColor $ bgColor)
   where
     bgColor = generateColor this
 
@@ -284,7 +284,7 @@ instance FromJSON AudioSink where
       status <- o .: "state" :: Parser Text
       let sink_active = status == "RUNNING"
       sink_mute <- o .: "mute"
-      return AudioSink {..}
+      pure AudioSink {..}
 
 audioGridCellWidth :: [AudioSink] -> Integer
 audioGridCellWidth = (7 *) . maximum . map (genericLength . sink_desc)
@@ -299,10 +299,10 @@ activeSinkNotHead lst = lst
 audioGridColorizer ::
      Maybe AudioSink -> [AudioSink] -> SinkName -> Bool -> X (String, String)
 audioGridColorizer activeSink mutedSinks this hovering
-  | hovering = return (pink, "#000000")
-  | isSinkMuted = return ("#ff0000", "#000000")
-  | isSinkActive = return (pink, white)
-  | otherwise = return (magenta, white)
+  | hovering = pure (pink, "#000000")
+  | isSinkMuted = pure ("#ff0000", "#000000")
+  | isSinkActive = pure (pink, white)
+  | otherwise = pure (magenta, white)
   where
     isSinkActive = (sink_name <$> activeSink) == Just this
     isSinkMuted = any (\sink -> sink_name sink == this) mutedSinks
@@ -320,8 +320,8 @@ getAudioSinkMetrics :: String -> IO (Map SinkName Int)
 getAudioSinkMetrics filename = do
   content <- tryReadFile
   case content of
-    Right content' -> return . decodeContent $ content'
-    Left _ -> return Map.empty
+    Right content' -> pure . decodeContent $ content'
+    Left _ -> pure Map.empty
   where
     tryReadFile :: IO (Either IOException ByteString)
     tryReadFile = try $ BL.readFile filename
@@ -340,7 +340,7 @@ incrementKey k m
   | Map.member k m = Map.adjust succ k m
   | otherwise = Map.insert k 2 m
   where
-    currentValue = fromMaybe 0 $ Map.lookup k m
+    currentValue = sum $ Map.lookup k m
 
 sortingFun :: Map SinkName Int -> AudioSink -> Down (Maybe Int)
 sortingFun audioSinkMetrics' sink =
@@ -368,7 +368,7 @@ doAudioGridSelect configLocation sinks = do
       liftIO
         $ BL.writeFile filename (encode $ incrementKey sink audioSinkMetrics)
       spawn $ "pactl set-default-sink " ++ T.unpack sink
-    Nothing -> return ()
+    Nothing -> pure ()
   where
     filename = configLocation ++ "/audiosink.json"
 
@@ -390,21 +390,21 @@ instance FromJSON AudioWindow where
       pidText <- properties .: "application.process.id"
       input_pid <-
         case readMaybe pidText of
-          Just p -> return p
+          Just p -> pure p
           Nothing -> fail "Failed to convert 'application.process.id' to Int32"
       input_corked <- o .: "corked"
-      return AudioWindow {..}
+      pure AudioWindow {..}
 
 comparePid :: Foldable t => t AudioWindow -> Window -> X Bool
 comparePid aws w = do
   mPid <- getProp32s "_NET_WM_PID" w
   case mPid of
     Just [x] ->
-      return
+      pure
         $ any
             (\aw -> fromIntegral x == input_pid aw && not (input_corked aw))
             aws
-    _ -> return False
+    _ -> pure False
 
 doAudioWindowGridSelect :: [AudioWindow] -> X ()
 doAudioWindowGridSelect audio_windows = do
@@ -435,7 +435,7 @@ fromClassName' w active = runQuery className w >>= flip pinkColorizer active
 getAllWindows :: X [Window]
 getAllWindows = do
   windowSet <- gets windowset
-  return $ W.allWindows windowSet
+  pure $ W.allWindows windowSet
 
 getWindowTitles :: [Window] -> X [String]
 getWindowTitles = mapM (runQuery title)
