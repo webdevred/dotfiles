@@ -10,7 +10,7 @@
 	conflictStyle = diff3
 
 [color.diff]
-        commit = magenta
+        commit = "#ffaaff"
 
 [log]
 	decorate = full

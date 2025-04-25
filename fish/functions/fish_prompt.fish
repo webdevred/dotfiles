@@ -2,7 +2,7 @@ function fish_prompt
     if not set -q VIRTUAL_ENV_DISABLE_PROMPT
         set -g VIRTUAL_ENV_DISABLE_PROMPT true
     end
-    set_color magenta
+    set_color "#ffaaff"
     printf '%s@%s:%s' $USER (prompt_hostname) (prompt_pwd)
     set_color normal
 
