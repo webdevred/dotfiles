@@ -9,10 +9,12 @@ alacritty:.config/alacritty
 fish:.config/fish
 
 # developing & debugging
+emacs:.config/emacs
+git:.config/git
 misc/vimrc:.vimrc
 misc/ghci_config:.ghci
 misc/gdbinit:.config/gdb/gdbinit
-git:.config/git
+misc/btop.conf:.config/btop/btop.conf
 
 # media player
 mpv:.config/mpv
