@@ -38,9 +38,10 @@ listBars :: IO [Bar]
 listBars = filter (isSuffixOf ".hs") <$> getDirectoryContents "xmobar"
 
 listMonitors :: IO [Monitor]
-listMonitors = do
-  output <- readCreateProcess (shell "xrandr --listmonitors") ""
-  pure . map parseMonitor . drop 1 . lines $ output
+listMonitors = xrandrCommand >>= parseMonitors
+  where
+    xrandrCommand = readCreateProcess (shell "xrandr --listmonitors") ""
+    parseMonitors = pure . map parseMonitor . drop 1 . lines
 
 printMonitor :: Monitor -> IO ()
 printMonitor mon = putStrLn $ "Processing monitor: " ++ monitorName mon

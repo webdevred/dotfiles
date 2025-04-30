@@ -395,7 +395,7 @@ instance FromJSON AudioWindow where
       input_corked <- o .: "corked"
       pure AudioWindow {..}
 
-comparePid :: Foldable t => t AudioWindow -> Window -> X Bool
+comparePid :: [AudioWindow] -> Window -> X Bool
 comparePid aws w = do
   mPid <- getProp32s "_NET_WM_PID" w
   case mPid of
