@@ -90,7 +90,7 @@ listConfigBars = do
 main :: IO ()
 main = do
   configBars <- listConfigBars
-  let myBars = foldr ((<>) . xmobarStatusBar) mempty configBars
+  let myBars = foldMap xmobarStatusBar configBars
    in xmonad . ewmhFullscreen . ewmh . docks . withSB myBars $ myConfig
 
 -- colors

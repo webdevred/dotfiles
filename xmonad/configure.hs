@@ -6,7 +6,7 @@ import Data.Aeson (decode, encode)
 import Data.Bool (bool)
 import qualified Data.ByteString.Lazy as BL
 import Data.ByteString.Lazy (ByteString)
-import Data.Char (isDigit)
+import Data.Char (isDigit, isSpace)
 import Data.List (intercalate, isPrefixOf, isSuffixOf)
 import qualified Data.List as L
 import qualified Data.Map as M
@@ -47,10 +47,10 @@ printMonitor mon = putStrLn $ "Processing monitor: " ++ monitorName mon
 
 splitBy :: Char -> String -> [String]
 splitBy _ "" = []
-splitBy delimiterChar inputString = foldr f [""] inputString
+splitBy delimiterChar inputString = foldr f [] inputString
   where
     f :: Char -> [String] -> [String]
-    f _ [] = error "huh"
+    f currentChar [] = f currentChar [""]
     f currentChar allStrings@(partialString:handledStrings)
       | currentChar == delimiterChar = "" : allStrings
       | otherwise = (currentChar : partialString) : handledStrings
@@ -89,18 +89,17 @@ prompt nbars nmons
     barsRange = " (0-" ++ show (nbars - 1) ++ ", c or d): "
 
 data Action
-  = Retry
-  | NextMonitor
+  = NextMonitor
   | DeleteBars
   | SelectBars [Int]
 
 selectAction :: Int -> Maybe Bar -> Either String Action
 selectAction nbars (Just bs)
-  | bs == "" = Right NextMonitor
+  | null bs = Left "please enter a command"
   | bs `isPrefixOf` "continue" = Right NextMonitor
   | bs `isPrefixOf` "delete" = Right DeleteBars
   | otherwise = fmap SelectBars . mapM (readBarIndex nbars) . splitBy ',' $ bs
-selectAction _ Nothing = Left "please enter a command"
+selectAction _ Nothing = Right NextMonitor
 
 printSelectedBars :: MonitorState -> String -> IO ()
 printSelectedBars (_, bars) monName
@@ -110,20 +109,17 @@ printSelectedBars (_, bars) monName
       $ "Current bars on monitor " ++ monName ++ ": " ++ intercalate ", " bars
 
 getLine' :: IO (Maybe String)
-getLine' = do
-  c <- getChar
-  putNewlineIFInline c
-  checkFirstChar c
+getLine' = getChar >>= \c -> putNewlineIFInline c >> checkFirstChar c
   where
-    putNewlineIFInline c = when (c `elem` ['\EOT', '\t']) (putChar '\n')
-    endOfInput = ['\EOT', '\t', '\n']
+    putNewlineIFInline c = when (c /= '\n' && isEndOfInput c) (putChar '\n')
+    isEndOfInput c = isSpace c || c == '\EOT'
     checkFirstChar c
-      | c == '\EOT' = pure $ Just ""
-      | c `elem` endOfInput = pure Nothing
+      | c `elem` ['\t', '\EOT'] = pure Nothing
+      | isSpace c = pure (Just "")
       | otherwise = Just . reverse <$> gather [c]
     gather xs = do
       c <- getChar
-      if c `elem` endOfInput
+      if isEndOfInput c
         then putNewlineIFInline c >> pure xs
         else gather (c : xs)
 
@@ -134,7 +130,6 @@ configureBars nmons mon nbars bars state = do
   putStrLn . prompt nbars $ nmons - monitorId mon - 1
   bs <- getLine'
   case selectAction nbars bs of
-    Right Retry -> continue state
     Right NextMonitor -> pure state
     Right DeleteBars -> continue (fst state, [])
     Right (SelectBars bs') -> updateMonitor bars bs' state >>= continue
