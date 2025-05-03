@@ -49,12 +49,22 @@ fi
 for util in $(cat dest_places.txt | sed -E '/^(#.*)?$/d'); do
   dot_file=$(echo -n "$util" | awk -F ':' '{ print $1}')
   config_dst=$(echo -n "$util" | awk -F ':' '{ print $2}')
+  mode=$(echo -n "$util" | awk -F ':' '{ print $4}')
   dot_file_dir=$(echo -n "$dot_file" | sed 's/\/.*//')
   config_dst_base_dir=$(echo -n "$config_dst" | grep -oh '^.config/[^/]*')
 
   if [ -z "$dot_file" ] || [ -z "$config_dst" ]; then
     echo "invalid line $util"
     continue
+  fi
+
+  if [ -f "$dot_file" ]; then
+      current_mode=$(stat -c '%a' $dot_file)
+      if echo -n "$mode" | grep -Eq '[0-7]{3}' && echo -n "$mode" | grep -vq "$current_mode"; then
+          set -x
+          chmod $mode $dot_file
+          { set +x; } 2>/dev/null
+      fi
   fi
 
   if [ $action -eq 4 ] || { [ $action -eq 1 ] && echo -n "$dot_file" | grep -Eq '^'"$util_to_install"''; }; then

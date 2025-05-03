@@ -1,3 +1,5 @@
+# src in dotfiles : dest : symlink/link (default is symlink) : chmod
+
 # xmonad
 xmonad/xmonad.hs:.config/xmonad/xmonad.hs
 xmobar:.config/xmobar
@@ -12,7 +14,7 @@ fish:.config/fish
 emacs:.config/emacs
 git:.config/git
 misc/vimrc:.vimrc
-misc/ghci_config:.ghci
+misc/ghci_config:.ghci::700
 misc/gdbinit:.config/gdb/gdbinit
 misc/btop.conf:.config/btop/btop.conf
 
