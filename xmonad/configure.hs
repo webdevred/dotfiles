@@ -35,7 +35,7 @@ parseMonitor monStr = Monitor parseMonitorName parseMonitorId
     parseMonitorName = reverse . takeWhile (/= ' ') . reverse $ monStr
 
 listBars :: IO [Bar]
-listBars = filter (isSuffixOf ".hs") <$> getDirectoryContents "xmobar"
+listBars = L.sort . filter (isSuffixOf ".hs") <$> getDirectoryContents "xmobar"
 
 listMonitors :: IO [Monitor]
 listMonitors = xrandrCommand >>= parseMonitors

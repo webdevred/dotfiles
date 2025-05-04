@@ -58,15 +58,6 @@ for util in $(cat dest_places.txt | sed -E '/^(#.*)?$/d'); do
     continue
   fi
 
-  if [ -f "$dot_file" ]; then
-      current_mode=$(stat -c '%a' $dot_file)
-      if echo -n "$mode" | grep -Eq '[0-7]{3}' && echo -n "$mode" | grep -vq "$current_mode"; then
-          set -x
-          chmod $mode $dot_file
-          { set +x; } 2>/dev/null
-      fi
-  fi
-
   if [ $action -eq 4 ] || { [ $action -eq 1 ] && echo -n "$dot_file" | grep -Eq '^'"$util_to_install"''; }; then
     if [ -d "$dot_file" ]; then
       for file in $(find "$dot_file" -type f -not -name '.*' -not -name '*~'); do
@@ -74,9 +65,16 @@ for util in $(cat dest_places.txt | sed -E '/^(#.*)?$/d'); do
         single_dst_path="$HOME/$config_dst/$single_filename"
         dottfiles_link "$(realpath $file)" "$single_dst_path"
       done
-    else
+    elif [ -f "$dot_file" ]; then
       real_dotfile_path=$(realpath "$dot_file")
       dottfiles_link "$real_dotfile_path" "$HOME/$config_dst"
+
+      current_mode=$(stat -c '%a' $dot_file)
+      if echo -n "$mode" | grep -Eq '[0-7]{3}' && echo -n "$mode" | grep -vq "$current_mode"; then
+        set -x
+        chmod $mode $real_dotfile_path
+        { set +x; } 2>/dev/null
+      fi
     fi
   elif [ $action -eq 2 ] && { [ -z "$util_to_remove" ] || echo -n "$dot_file" | grep -Eq '^'"$util_to_remove"''; }; then
     if [ -n "$config_dst_base_dir" ] && [ -d "$HOME/$config_dst_base_dir" ]; then
