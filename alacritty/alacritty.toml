@@ -20,7 +20,7 @@ yellow = "#f1fa8c"
 
 [colors.primary]
 background = "#282a36"
-foreground = "#f8f8f2"
+foreground = "#ffaaff"
 
 [cursor]
 style = "Block"
