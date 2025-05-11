@@ -29,7 +29,7 @@ dotfiles_configure() {
   if [ -f "$dot_file_dir/configure.sh" ]; then
     . $dot_file_dir/configure.sh
   elif [ -f "$dot_file_dir/configure.hs" ]; then
-    ghc --run $dot_file_dir/configure.hs -- $2
+    ghc -fforce-recomp --run $dot_file_dir/configure.hs -- $2
   fi
 }
 
@@ -53,6 +53,8 @@ for util in $(cat dest_places.txt | sed -E '/^(#.*)?$/d'); do
   dot_file_dir=$(echo -n "$dot_file" | sed 's/\/.*//')
   config_dst_base_dir=$(echo -n "$config_dst" | grep -oh '^.config/[^/]*')
 
+  real_dot_file_filename=$(realpath $dot_file)
+
   if [ -z "$dot_file" ] || [ -z "$config_dst" ]; then
     echo "invalid line $util"
     continue
@@ -64,11 +66,11 @@ for util in $(cat dest_places.txt | sed -E '/^(#.*)?$/d'); do
         single_filename=$(realpath --relative-to="$dot_file" "$file")
         single_dst_path="$HOME/$config_dst/$single_filename"
 
-        dot_file_filename=$(realpath $file)
-        dottfiles_link "$dot_file_filename" "$single_dst_path"
+        single_real_dotfile_path=$(realpath "$file")
+
+        dottfiles_link "$single_real_dotfile_path" "$single_dst_path"
       done
     elif [ -f "$dot_file" ]; then
-      real_dotfile_path=$(realpath "$dot_file")
       dottfiles_link "$real_dotfile_path" "$HOME/$config_dst"
 
       current_mode=$(stat -c '%a' $dot_file)
@@ -87,6 +89,6 @@ for util in $(cat dest_places.txt | sed -E '/^(#.*)?$/d'); do
   fi
 
   if [ $action -eq 3 ] && echo -n "$dot_file" | grep -Eq '^'"$selected_util"'' && [ -d "$dot_file_dir" ]; then
-    dotfiles_configure "$dot_file_dir" "$HOME/$config_dst_base_dir"
+    dotfiles_configure "$dot_file" "$HOME/$config_dst_base_dir"
   fi
 done
