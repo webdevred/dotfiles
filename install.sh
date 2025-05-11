@@ -10,9 +10,9 @@ dottfiles_link() {
   fi
 
   if ! [ -e "$2" ]; then
-      set -x
-      ln -sf "$1" "$2"
-      { set +x; } 2>/dev/null
+    set -x
+    ln -sf "$1" "$2"
+    { set +x; } 2>/dev/null
   fi
 }
 
@@ -35,13 +35,13 @@ dotfiles_configure() {
 
 if echo -n "$1" | grep -Eq '^-?i$' && [ -n $2 ]; then
   action=1
-  util_to_install="$2"
+  selected_util="$2"
 elif echo -n "$1" | grep -Eq '^-?u$'; then
   action=2
-  util_to_remove="$2"
+  selected_util="$2"
 elif echo -n "$1" | grep -Eq '^-?c$'; then
   action=3
-  util_to_configure="$2"
+  selected_util="$2"
 else
   action=4
 fi
@@ -60,10 +60,12 @@ for util in $(cat dest_places.txt | sed -E '/^(#.*)?$/d'); do
 
   if [ $action -eq 4 ] || { [ $action -eq 1 ] && echo -n "$dot_file" | grep -Eq '^'"$util_to_install"''; }; then
     if [ -d "$dot_file" ]; then
-      for file in $(find "$dot_file" -type f -not -name '.*' -not -name '*~'); do
+      for file in $(find "$dot_file" -type f -not -name '.*' -not -name '*~' -not -name '#*'); do
         single_filename=$(realpath --relative-to="$dot_file" "$file")
         single_dst_path="$HOME/$config_dst/$single_filename"
-        dottfiles_link "$(realpath $file)" "$single_dst_path"
+
+        dot_file_filename=$(realpath $file)
+        dottfiles_link "$dot_file_filename" "$single_dst_path"
       done
     elif [ -f "$dot_file" ]; then
       real_dotfile_path=$(realpath "$dot_file")
@@ -76,7 +78,7 @@ for util in $(cat dest_places.txt | sed -E '/^(#.*)?$/d'); do
         { set +x; } 2>/dev/null
       fi
     fi
-  elif [ $action -eq 2 ] && { [ -z "$util_to_remove" ] || echo -n "$dot_file" | grep -Eq '^'"$util_to_remove"''; }; then
+  elif [ $action -eq 2 ] && { [ -z "$selected_util" ] || echo -n "$dot_file" | grep -Eq '^'"$selected_util"''; }; then
     if [ -n "$config_dst_base_dir" ] && [ -d "$HOME/$config_dst_base_dir" ]; then
       dotfiles_remove "$HOME/$config_dst_base_dir"
     else
@@ -84,7 +86,7 @@ for util in $(cat dest_places.txt | sed -E '/^(#.*)?$/d'); do
     fi
   fi
 
-  if [ $action -eq 3 ] && echo -n "$dot_file" | grep -Eq '^'"$util_to_configure"'' && [ -d "$dot_file_dir" ]; then
+  if [ $action -eq 3 ] && echo -n "$dot_file" | grep -Eq '^'"$selected_util"'' && [ -d "$dot_file_dir" ]; then
     dotfiles_configure "$dot_file_dir" "$HOME/$config_dst_base_dir"
   fi
 done
