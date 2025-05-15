@@ -84,6 +84,16 @@
 
 (add-hook 'text-mode-hook #'visual-line-mode)
 
+(require 'ansi-color)
+(defun colorize-compilation-buffer ()
+  "Colorize ANSI escape sequences in the compilation buffer."
+  (let ((inhibit-read-only t)
+        (compilation-environment '("LANG=C")))
+    (ansi-color-apply-on-region (point-min) (point-max))))
+
+(add-hook 'compilation-filter-hook 'colorize-compilation-buffer)
+
+
 ;; set up column numbers
 (column-number-mode 1)
 (add-hook 'prog-mode-hook (lambda () (display-line-numbers-mode 1)))
@@ -91,7 +101,6 @@
 ; deb key bindings
 (global-set-key (kbd "C-c b") (lambda () (interactive) (projectile-switch-to-buffer)))
 (global-set-key (kbd "C-c d") (lambda () (interactive) (delete-matching-lines)))
-(global-set-key (kbd "C-c t") (lambda () (interactive) (shell)) )
 (global-set-key (kbd "C-c r") (lambda () (interactive) (load user-init-file) ) )
 (global-set-key (kbd "C-c u") (lambda () (interactive) (package-upgrade-all nil) ))
 

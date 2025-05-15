@@ -22,7 +22,6 @@
   (package-install 'use-package))
 
 (use-package no-littering
-  :ensure t
   :demand t)
 
 (use-package diminish
@@ -36,11 +35,9 @@
   (editorconfig-mode 1))
 
 (use-package magit
-  :ensure t
   :hook (magit-status . (lambda () (which-function-mode 0))))
 
-(use-package git-modes
-  :ensure t)
+(use-package git-modes)
 
 (use-package undo-tree
   :config
@@ -60,6 +57,7 @@
   :custom
   (lsp-auto-guess-root t)
   (lsp-warn-no-matched-clients nil)
+  (lsp-enable-suggest-server-download nil)
   :commands lsp lsp-deferred)
 
 (use-package php-mode)
