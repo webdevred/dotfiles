@@ -1,5 +1,3 @@
-# -*- mode: gitconfig-mode
-
 [include]
 	path = ~/.config/git/local.gitconfig
 

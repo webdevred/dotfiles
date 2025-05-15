@@ -1,3 +1,5 @@
+# -*- mode: gitignore -*-
+
 # Vim temporary, swap, backup, and undo files
 *.swp
 *.swo
