@@ -55,9 +55,11 @@
   :hook ((prog-mode . my-lsp-prog-hook)
          (save-buffer . (lambda () (when (lsp-workspaces) (lsp-restart-workspace)))))
   :custom
+  (lsp-prefer-capf t)
   (lsp-auto-guess-root t)
   (lsp-warn-no-matched-clients nil)
   (lsp-enable-suggest-server-download nil)
+  (lsp-clients-clangd-args '("--header-insertion=never"))
   :commands lsp lsp-deferred)
 
 (use-package php-mode)
@@ -112,6 +114,8 @@
    ido-ignore-files '("\\`\\.nfs" "\\`#.*" "\\`.*~"))
   :init
   (ido-mode 1))
+
+(use-package hindent)
 
 (defun load-config-file (filename)
   "load file name in this config"

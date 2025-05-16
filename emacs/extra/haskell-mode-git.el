@@ -38,9 +38,12 @@
     (diminish 'haskell-indent-mode)
     (diminish 'interactive-haskell-mode))
 
+  (hindent-mode 1)
+
   (define-key haskell-mode-map (kbd "C-c l") #'haskell-run-hlint)
   (define-key haskell-mode-map (kbd "C-c t") #'haskell-run-tests)
-  (define-key haskell-mode-map (kbd "C-c a") #'haskell-command-insert-language-pragma))
+  (define-key haskell-mode-map (kbd "C-c a") #'haskell-command-insert-language-pragma)
+  (add-hook 'before-save-hook #'hindent-reformat-buffer nil t))
 
 (add-hook 'haskell-mode-hook #'my-haskell-mode-setup)
 
@@ -50,3 +53,4 @@
 (setq haskell-process-show-debug-tips t)
 (setq haskell-doc-prettify-types t)
 
+(setq haskell-indentation-electric-flag t)
