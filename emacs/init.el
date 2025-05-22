@@ -117,6 +117,9 @@
 
 (use-package hindent)
 
+(use-package tuareg
+  :mode (("\\.ml$" . tuareg-mode)))
+
 (defun load-config-file (filename)
   "load file name in this config"
   (let ((filepath (concat (expand-file-name (file-name-directory user-init-file)) filename)))
