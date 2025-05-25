@@ -20,8 +20,9 @@ Config { font = "DejaVu Sans Mono 12"
                     , Run Date "%a %b %_d %Y %H:%M:%S" "date" 10
                     , Run Com "python3" [".config/xmobar/pulseaudio_status.py"] "pulseaudio" 60
                     , Run Battery [ "-t", "<left>% / <timeleft>" ] 60
+		    , Run Wireless "" ["-t <ssid>"] 60
                     ]
        , sepChar = "%"
        , alignSep = "}{"
-       , template = "}{ %pulseaudio% | %battery% | %memory% | %cpu% | %date%"
+       , template = "}{ %pulseaudio% | %battery% | %wi% | %memory% | %cpu% | %date%"
        }

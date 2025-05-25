@@ -1,11 +1,11 @@
 Config
-  { font = "DejaVu Sans Mono 11"
+  { font = "DejaVu Sans Mono 14"
   , borderColor = "black"
   , border = FullB
   , bgColor = "black"
   , fgColor = "#ffaaff"
   , alpha = 128
-  , position = BottomH 15
+  , position = BottomH 17
   , textOffset = -1
   , iconOffset = -1
   , lowerOnStart = True
