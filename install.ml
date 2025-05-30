@@ -84,21 +84,22 @@ let rec link_dotfile please_symlink maybe_mode source destination =
           ( String.starts_with single_file ~prefix:"."
           || String.starts_with single_file ~prefix:"#"
           || String.ends_with single_file ~suffix:"~" )
-      then (
-        create_dir destination ;
+      then
         link_dotfile please_symlink maybe_mode
           (source ^ "/" ^ single_file)
-          (destination ^ "/" ^ single_file) )
+          (destination ^ "/" ^ single_file)
     done
   else (
     set_permissions source file_stat.st_perm maybe_mode ;
-    if not (Sys.file_exists destination) then
+    if not (Sys.file_exists destination) then (
+      let dest_dir = Filename.dirname destination in
+      if not (Sys.file_exists dest_dir) then create_dir dest_dir ;
       if please_symlink then (
         Printf.printf "symlinking %s %s\n" source destination ;
         symlink source destination )
       else (
         Printf.printf "hardlinking %s %s\n" source destination ;
-        link source destination ) )
+        link source destination ) ) )
 
 let install cwd places =
   let dotfile_basepath = cwd ^ "/" in
