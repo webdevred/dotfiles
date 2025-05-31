@@ -1,65 +1,54 @@
+{-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE ImportQualifiedPost #-}
 {-# OPTIONS_GHC -fno-warn-deprecations #-}
 
 -- a simple configuration
-import XMonad hiding ((|||))
-import XMonad.Util.SpawnOnce
 
-import Data.Bool (bool)
-import XMonad.Hooks.DynamicLog
-import XMonad.Hooks.StatusBar
-
+import Control.Exception (IOException, try)
 import Control.Monad (filterM)
+import Data.Aeson
+import Data.Aeson.Types (Parser)
+import Data.Bool (bool)
+import Data.ByteString.Lazy (ByteString)
+import Data.Char (ord, toLower)
+import Data.Hashable
+import Data.Int (Int32)
+import Data.List (find, genericLength, sortOn)
+import Data.Map (Map)
+import Data.Maybe (fromMaybe)
+import Data.Ord (Down (..))
+import Data.String (fromString)
+import Data.Text (Text)
+import GHC.Stack (withFrozenCallStack)
+import Graphics.X11.ExtraTypes.XF86
+import Numeric (showHex)
+import System.Directory (XdgDirectory (XdgConfig), getXdgDirectory)
+import Text.Read (readMaybe)
+import XMonad hiding ((|||))
 import XMonad.Actions.DynamicWorkspaces (addHiddenWorkspace)
+import XMonad.Actions.GridSelect
+import XMonad.Hooks.DynamicLog
 import XMonad.Hooks.EwmhDesktops
 import XMonad.Hooks.ManageDocks
 import XMonad.Hooks.ManageHelpers
+import XMonad.Hooks.StatusBar
 import XMonad.Layout.LayoutCombinators
 import XMonad.Layout.Named
 import XMonad.Layout.NoBorders
 import XMonad.Layout.Spacing
-import XMonad.StackSet qualified as W
 import XMonad.Util.Loggers
 import XMonad.Util.NamedScratchpad
 import XMonad.Util.Run (runProcessWithInput)
+import XMonad.Util.SpawnOnce
+import XMonad.Util.WindowProperties (getProp32s)
 
-import Data.Aeson
-import Data.Aeson.Types (Parser)
-import Data.ByteString.Lazy (ByteString)
-import Data.Ord (Down(..))
-import Data.String (fromString)
-import Data.Text (Text)
+import Data.ByteString.Lazy qualified as BL
+import Data.Map qualified as Map
 import Data.Text qualified as T (unpack)
 import Data.Text.Lazy qualified as TL (strip, unpack)
 import Data.Text.Lazy.Encoding qualified as TLE (decodeUtf8)
-import Text.Read (readMaybe)
-
-import Data.Int (Int32)
-
-import Numeric (showHex)
-
-import GHC.Stack (withFrozenCallStack)
-
-import Data.ByteString.Lazy qualified as BL
-
-import Control.Exception (IOException, try)
-import Data.Char (chr, toLower)
-import Data.List (find, genericLength, sortOn)
-import Data.Maybe (fromMaybe)
-import System.Directory (XdgDirectory(XdgConfig), getXdgDirectory)
-
-import XMonad.Util.WindowProperties (getProp32s)
-
-import Data.Hashable
-
-import Graphics.X11.ExtraTypes.XF86
-
-import Data.Map qualified as Map
-import Data.Map (Map)
-
-import XMonad.Actions.GridSelect
+import XMonad.StackSet qualified as W
 
 type ConfigBar = (String, String)
 
@@ -121,7 +110,7 @@ excludeEmojis = filter isEmoji
       , (0x1F680, 0x1F6FF) -- Transport and Map Symbols
       , (0x1F1E6, 0x1F1FF) -- Regional Indicator Symbols
       ]
-    charInRange c (start, end) = c `elem` map chr [start .. end]
+    charInRange c (start, end) = ord c `elem` [start .. end]
     isEmoji :: Char -> Bool
     isEmoji c = not $ any (charInRange c) emojiRanges
 
@@ -170,21 +159,21 @@ myGridNavigation =
         , ((0, xK_s), substringSearch myGridNavigation)
         , ((0, xK_Tab), moveNext >> navNSearch)
         , ((shiftMask, xK_Tab), movePrev >> navNSearch)
-        -- arrow keys
-        , ((0, xK_Left), move (-1, 0) >> myGridNavigation)
+        , -- arrow keys
+          ((0, xK_Left), move (-1, 0) >> myGridNavigation)
         , ((0, xK_Right), move (1, 0) >> myGridNavigation)
         , ((0, xK_Up), move (0, -1) >> myGridNavigation)
         , ((0, xK_Down), move (0, 1) >> myGridNavigation)
-        -- h, j, k, l to move left, down, up and right
-        , ((0, xK_h), move (-1, 0) >> myGridNavigation)
+        , -- h, j, k, l to move left, down, up and right
+          ((0, xK_h), move (-1, 0) >> myGridNavigation)
         , ((0, xK_j), move (0, 1) >> myGridNavigation)
         , ((0, xK_k), move (0, -1) >> myGridNavigation)
         , ((0, xK_l), move (1, 0) >> myGridNavigation)
-        --  y and  i to move left and right and up at the same time
-        , ((0, xK_u), move (-1, -1) >> myGridNavigation)
+        , --  y and  i to move left and right and up at the same time
+          ((0, xK_u), move (-1, -1) >> myGridNavigation)
         , ((0, xK_i), move (1, -1) >> myGridNavigation)
-        --  n and m to move left and right and down at the same time
-        , ((0, xK_n), move (-1, 1) >> myGridNavigation)
+        , --  n and m to move left and right and down at the same time
+          ((0, xK_n), move (-1, 1) >> myGridNavigation)
         , ((0, xK_m), move (1, 1) >> myGridNavigation)
         ]
     -- The navigation handler ignores unknown key symbols
@@ -273,7 +262,8 @@ data AudioSink = AudioSink
   , sink_desc :: SinkDesc
   , sink_active :: Bool
   , sink_mute :: Bool
-  } deriving (Show)
+  }
+  deriving (Show)
 
 instance FromJSON AudioSink where
   parseJSON =
@@ -286,17 +276,19 @@ instance FromJSON AudioSink where
       pure AudioSink {..}
 
 audioGridCellWidth :: [AudioSink] -> Integer
-audioGridCellWidth = (7 *) . maximum . map (genericLength . sink_desc)
+audioGridCellWidth =
+  let sinkDescLength = toInteger . length . sink_desc
+   in (7 *) . maximum . map sinkDescLength
 
 sinkToTuple :: AudioSink -> (SinkDesc, SinkName)
 sinkToTuple sink = (sink_desc sink, sink_name sink)
 
 activeSinkNotHead :: [AudioSink] -> [AudioSink]
-activeSinkNotHead (f@(AudioSink {sink_active = True}):s:rest) = s : f : rest
+activeSinkNotHead (f@(AudioSink {sink_active = True}) : s : rest) = s : f : rest
 activeSinkNotHead lst = lst
 
-audioGridColorizer ::
-     Maybe AudioSink -> [AudioSink] -> SinkName -> Bool -> X (String, String)
+audioGridColorizer
+  :: Maybe AudioSink -> [AudioSink] -> SinkName -> Bool -> X (String, String)
 audioGridColorizer activeSink mutedSinks this hovering
   | hovering = pure (pink, "#000000")
   | isSinkMuted = pure ("#ff0000", "#000000")
@@ -334,8 +326,8 @@ scaleDownMap m =
 incrementKey :: SinkName -> Map SinkName Int -> Map SinkName Int
 incrementKey k m
   | currentValue == maxBound =
-    let scaledDownMap = scaleDownMap m
-     in Map.adjust (2 +) k scaledDownMap
+      let scaledDownMap = scaleDownMap m
+       in Map.adjust (2 +) k scaledDownMap
   | Map.member k m = Map.adjust succ k m
   | otherwise = Map.insert k 2 m
   where
@@ -364,8 +356,8 @@ doAudioGridSelect configLocation sinks = do
   sinkMaybe <- gridselect gridConfig $ prepareSinks sinks
   case sinkMaybe of
     Just sink -> do
-      liftIO
-        $ BL.writeFile filename (encode $ incrementKey sink audioSinkMetrics)
+      liftIO $
+        BL.writeFile filename (encode $ incrementKey sink audioSinkMetrics)
       spawn $ "pactl set-default-sink " ++ T.unpack sink
     Nothing -> pure ()
   where
@@ -380,7 +372,8 @@ audioGridSelect = do
 data AudioWindow = AudioWindow
   { input_pid :: Int32
   , input_corked :: Bool
-  } deriving (Show)
+  }
+  deriving (Show)
 
 instance FromJSON AudioWindow where
   parseJSON =
@@ -399,10 +392,8 @@ comparePid aws w = do
   mPid <- getProp32s "_NET_WM_PID" w
   case mPid of
     Just [x] ->
-      pure
-        $ any
-            (\aw -> fromIntegral x == input_pid aw && not (input_corked aw))
-            aws
+      let winInAudioWindowList aw = fromIntegral x == input_pid aw && not (input_corked aw)
+       in pure $ any winInAudioWindowList aws
     _ -> pure False
 
 doAudioWindowGridSelect :: [AudioWindow] -> X ()
@@ -466,27 +457,34 @@ switchToLayout = sendMessage . JumpToLayout
 myKeys :: XConfig Layout -> Map (ButtonMask, KeySym) (X ())
 myKeys conf@(XConfig {modMask = modm}) =
   Map.union
-    (Map.fromList
-       [ ((modm, xK_s), spawnSelected' myApplications)
-       , ((modm, xK_a), windowGridSelect)
-       , ((modm, xK_p), audioGridSelect)
-       , ((modm, xK_o), audioWindowGridSelect)
-       , ((modm, xK_x), runRofi "drun")
-       , ((modm, xK_z), runRofi "window")
-       , ((modm, xK_f), switchToLayout "Full")
-       , ((modm, xK_b), switchToLayout "Big Master Tall")
-       , ((modm, xK_t), switchToLayout "Tall")
-       , ((modm .|. shiftMask, xK_t), withFocused $ windows . W.sink)
-       , ((modm .|. shiftMask, xK_i), spawnXpropInfo)
-       , ((modm .|. shiftMask, xK_space), setLayout $ XMonad.layoutHook conf)
-       , ( (0, xF86XK_AudioRaiseVolume)
-         , spawn "pactl set-sink-volume @DEFAULT_SINK@ +5%")
-       , ( (0, xF86XK_AudioLowerVolume)
-         , spawn "pactl set-sink-volume @DEFAULT_SINK@ -5%")
-       , ( (0, xF86XK_AudioMute)
-         , spawn "pactl set-sink-mute @DEFAULT_SINK@ toggle")
-       , ((modm, xK_F1), namedScratchpadAction scratchpads "emacs-scratch")
-       ])
+    ( Map.fromList
+        [ ((modm, xK_s), spawnSelected' myApplications)
+        , ((modm, xK_a), windowGridSelect)
+        , ((modm, xK_p), audioGridSelect)
+        , ((modm, xK_o), audioWindowGridSelect)
+        , ((modm, xK_x), runRofi "drun")
+        , ((modm, xK_z), runRofi "window")
+        , ((modm, xK_f), switchToLayout "Full")
+        , ((modm, xK_b), switchToLayout "Big Master Tall")
+        , ((modm, xK_t), switchToLayout "Tall")
+        , ((modm .|. shiftMask, xK_t), withFocused $ windows . W.sink)
+        , ((modm .|. shiftMask, xK_i), spawnXpropInfo)
+        , ((modm .|. shiftMask, xK_space), setLayout $ XMonad.layoutHook conf)
+        ,
+          ( (0, xF86XK_AudioRaiseVolume)
+          , spawn "pactl set-sink-volume @DEFAULT_SINK@ +5%"
+          )
+        ,
+          ( (0, xF86XK_AudioLowerVolume)
+          , spawn "pactl set-sink-volume @DEFAULT_SINK@ -5%"
+          )
+        ,
+          ( (0, xF86XK_AudioMute)
+          , spawn "pactl set-sink-mute @DEFAULT_SINK@ toggle"
+          )
+        , ((modm, xK_F1), namedScratchpadAction scratchpads "emacs-scratch")
+        ]
+    )
     $ keys def conf
 
 -- this takes the configLocation that is fetched in main
