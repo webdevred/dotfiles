@@ -544,5 +544,6 @@ myLayouts =
 -- start picom with my config and set my background using wpc
 myStartup :: X ()
 myStartup = do
+  spawnOnce "xset s off; xset s noblank; xset -dpms"
   spawnOnce "picom"
   spawnOnce "wpc -b"
