@@ -28,8 +28,7 @@ let get_choosen_action args =
 
 (* determine wheter dot file was configured to be symlinked or hardlinked. 0
    means hardlink, anything else symlink *)
-let should_symlink opt_syml =
-  Bool.not (String.equal (Option.value opt_syml ~default:"1") "0")
+let should_symlink opt_syml = String.equal (Option.value opt_syml ~default:"symlink") "symlink"
 
 let parse_mode maybe_mode =
   match maybe_mode with
