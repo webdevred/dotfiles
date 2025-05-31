@@ -1,8 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ImportQualifiedPost #-}
-{-# OPTIONS_GHC -fno-warn-missing-signatures #-}
-{-# OPTIONS_GHC -fno-warn-incomplete-uni-patterns #-}
+{-# OPTIONS_GHC -fno-warn-deprecations #-}
 
 -- a simple configuration
 import XMonad hiding ((|||))
@@ -18,7 +17,7 @@ import XMonad.Hooks.EwmhDesktops
 import XMonad.Hooks.ManageDocks
 import XMonad.Hooks.ManageHelpers
 import XMonad.Layout.LayoutCombinators
-import XMonad.Layout.Renamed
+import XMonad.Layout.Named
 import XMonad.Layout.NoBorders
 import XMonad.Layout.Spacing
 import XMonad.StackSet qualified as W
