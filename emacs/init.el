@@ -94,9 +94,18 @@
   (company-minimum-prefix-length 1)
   (company-idle-delay 0.0))
 
+(define-inline treemacs-hide-tags (file _)
+  ""
+  (declare (side-effect-free t) (pure t))
+  (inline-letevals (file)
+    (inline-quote
+     (string= (file-name-nondirectory ,file) "TAGS"))))
+
 (use-package treemacs
   :init
   (setq treemacs-no-png-images t)
+  :config
+  (add-to-list 'treemacs-ignored-file-predicates #'treemacs-hide-tags)
   :bind
   (:map global-map
         ("M-0"       . treemacs-select-window)
