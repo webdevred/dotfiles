@@ -52,7 +52,7 @@
     (lsp-deferred)))
 
 (use-package lsp-mode
-  :hook ((prog-mode . my-lsp-prog-hook)
+  :hook ((prog-mode . #'my-lsp-prog-hook)
          (save-buffer . (lambda () (when (lsp-workspaces) (lsp-restart-workspace)))))
   :custom
   (lsp-prefer-capf t)
@@ -66,6 +66,21 @@
 
 (use-package yaml-mode
   :mode (("\\.ya?ml$" . yaml-mode)))
+
+;; some time I may use haskell from repo again but for now I will be compiling
+;;
+;; (use-package haskell-mode
+;;   :mode (("\\.hs$" . haskell-mode))
+;;   :hook (;; (haskell-mode-hook . #'haskell-collapse-mode)
+;;          ;; (haskell-mode-hook . #'haskell-doc-mode)
+;;          (haskell-mode-hook . #'haskell-indent-mode)
+;;          (haskell-mode-hook . #'interactive-haskell-mode))
+;;   :config
+;;   '((haskell-tags-on-save t)
+;;     (hindent-reformat-buffer-on-save t)
+;;     (haskell-process-show-debug-tips)
+;;     (haskell-doc-prettify-types t))
+;;   :diminish 'haskell-doc-mode)
 
 (use-package company
   :after lsp-mode
