@@ -113,6 +113,24 @@ let install cwd places =
   in
   List.iter do_install places
 
+(* logic for uninstallation of dotfiles *)
+let uninstall places =
+  let rec rmrf path =
+    match Sys.is_directory path with
+    | true ->
+        Sys.readdir path
+        |> Array.iter (fun name -> rmrf (Filename.concat path name)) ;
+        Unix.rmdir path
+    | false -> Sys.remove path
+  in
+  let do_uninstall place =
+    let destination = place.destination in
+    if Sys.file_exists destination then (
+      Printf.printf "uninstalling %s" destination ;
+      rmrf destination )
+  in
+  List.iter do_uninstall places
+
 (* entry *)
 let perform_action action maybe_chosen_sources cwd places =
   let chosen_places =
@@ -122,7 +140,7 @@ let perform_action action maybe_chosen_sources cwd places =
   in
   match action with
   | Install -> install cwd chosen_places
-  | Uninstall -> () (* uninstall chosen_dotfiles *)
+  | Uninstall -> uninstall chosen_places
   | Configure -> () (* confugure chosen_dotfiles *)
 
 let () =
