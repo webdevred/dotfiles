@@ -26,9 +26,11 @@ let get_choosen_action args =
     | a -> raise (Failure a)
   else Install
 
-(* determine wheter dot file was configured to be symlinked or hardlinked. 0
-   means hardlink, anything else symlink *)
-let should_symlink opt_syml = String.equal (Option.value opt_syml ~default:"symlink") "symlink"
+(* Determine whether the dotfile should be symlinked or hardlinked. If the
+   value is "hardlink", we use hardlinks (or mirrored directories with
+   hardlinked files). For any other value, we default to symlinking. *)
+let should_symlink opt_syml =
+  String.equal (Option.value opt_syml ~default:"symlink") "symlink"
 
 let parse_mode maybe_mode =
   match maybe_mode with
