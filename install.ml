@@ -1,5 +1,6 @@
-#!/usr/bin/env -S ocaml -I +unix unix.cma
+#!/usr/bin/env -S ocaml -I +unix -I +str unix.cma str.cma
 
+open Str
 open Unix
 
 (* file we store dest places in *)
@@ -61,7 +62,14 @@ let places =
   |> List.map line_to_dot_file
 
 let dotfile_is_chosen chosen place =
-  List.exists (fun x -> String.compare x place.source == 0) chosen
+  let string_contains haystack needle =
+    try
+      let re = Str.regexp_string needle in
+      ignore (Str.search_forward re haystack 0) ;
+      true
+    with Not_found -> false
+  in
+  List.exists (fun x -> string_contains place.source x) chosen
 
 (* logic for doing installation of dotfiles *)
 let create_dir dir = if not (Sys.file_exists dir) then Sys.mkdir dir 0o700
