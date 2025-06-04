@@ -46,25 +46,43 @@
   :init
   (global-undo-tree-mode))
 
-(defun my-lsp-prog-hook ()
-  "Run `lsp-deferred` in programming modes except `jbeam-mode`."
-  (unless (eq major-mode 'jbeam-mode)
-    (lsp-deferred)))
-
-(use-package lsp-mode
-  :hook ((prog-mode . #'my-lsp-prog-hook)
-         (save-buffer . (lambda () (when (lsp-workspaces) (lsp-restart-workspace)))))
+(use-package eglot
+  :ensure t
+  :hook ((c-mode c++-mode haskell-mode) . eglot-ensure)
   :custom
-  (lsp-prefer-capf t)
-  (lsp-auto-guess-root t)
-  (lsp-warn-no-matched-clients nil)
-  (lsp-enable-suggest-server-download nil)
-  (lsp-clients-clangd-args '("--header-insertion=never"))
-  :commands lsp lsp-deferred)
+  (eglot-extend-to-xref t)
+  :config
+  (add-to-list 'eglot-server-programs
+               '((c-mode c++-mode) . ("clangd")))
+  (add-to-list 'eglot-server-programs
+               '((haskell-mode) . ("haskell-language-server-wrapper" "--lsp")))
+  (setq xref-backend-functions '(eglot-xref-backend xref-etags-backend))
+  (setq tags-revert-without-query t
+        xref-etags-mode t
+        large-file-warning-threshold nil
+        eldoc-idle-delay 0.5)
+  :bind (:map eglot-mode-map
+              ("C-c r" . eglot-rename)
+              ("C-c a" . eglot-code-actions)
+              ("M-."   . xref-find-definitions)
+              ("M-,"   . xref-pop-marker-stack)))
 
-(use-package php-mode)
+(use-package corfu
+  :ensure t
+  :custom
+  (corfu-auto t)
+  (corfu-cycle t)
+  (corfu-preselect 'first)
+  (corfu-quit-no-match 'separator)
+  (corfu-quit-at-boundary nil)
+  :init
+  (global-corfu-mode))
+
+(use-package php-mode
+  :ensure t)
 
 (use-package yaml-mode
+  :ensure t
   :mode (("\\.ya?ml$" . yaml-mode)))
 
 ;; some time I may use haskell from repo again but for now I will be compiling
@@ -81,18 +99,6 @@
 ;;     (haskell-process-show-debug-tips)
 ;;     (haskell-doc-prettify-types t))
 ;;   :diminish 'haskell-doc-mode)
-
-(use-package company
-  :after lsp-mode
-  :diminish 'company-mode
-  :hook (prog-mode . company-mode)
-  :bind (:map company-active-map
-         ("<tab>" . company-complete-selection))
-        (:map lsp-mode-map
-         ("<tab>" . company-indent-or-complete-common))
-  :custom
-  (company-minimum-prefix-length 1)
-  (company-idle-delay 0.0))
 
 (define-inline treemacs-hide-tags (file _)
   ""
