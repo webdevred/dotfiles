@@ -83,7 +83,8 @@
 
 (use-package yaml-mode
   :ensure t
-  :mode (("\\.ya?ml$" . yaml-mode)))
+  :mode (("\\.ya?ml$" . yaml-mode)
+         ("/stack\\.yaml\\.lock\\'" . yaml-mode)))
 
 ;; some time I may use haskell from repo again but for now I will be compiling
 ;;
