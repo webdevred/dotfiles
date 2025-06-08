@@ -14,6 +14,7 @@ fish:.config/fish
 emacs:.config/emacs:hardlink
 git:.config/git
 misc/vimrc:.vimrc
+misc/cabal_config:.config/cabal/config
 misc/ghci_config:.ghci::700
 misc/gdbinit:.config/gdb/gdbinit
 misc/btop.conf:.config/btop/btop.conf:hardlink
