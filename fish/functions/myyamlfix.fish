@@ -4,5 +4,5 @@ function myyamlfix
     echo "No YAML files found."
     return 1
   end
-  yamlfix -c ~/.config/yamlfix/config $yaml_files $argv
+  yamlfix -c $HOME/.config/yamlfix/config.toml $yaml_files $argv
 end

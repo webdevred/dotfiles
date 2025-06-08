@@ -67,6 +67,9 @@
               ("M-."   . xref-find-definitions)
               ("M-,"   . xref-pop-marker-stack)))
 
+(use-package fish-mode
+  :mode (("\\.fish$" . fish-mode)))
+
 (use-package corfu
   :ensure t
   :custom

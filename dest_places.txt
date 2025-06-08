@@ -19,7 +19,7 @@ misc/ghci_config:.ghci::700
 misc/gdbinit:.config/gdb/gdbinit
 
 # misc
-misc/yamlfix_config:.config/yamlfix/config
+misc/yamlfix.toml:.config/yamlfix/config.toml:hardlink
 misc/btop.conf:.config/btop/btop.conf:hardlink
 
 # media player
