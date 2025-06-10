@@ -52,10 +52,14 @@
   :custom
   (eglot-extend-to-xref t)
   :config
+  (setq eglot-server-programs
+        (cl-remove-if (lambda (entry)
+                        (eq 'haskell-mode (car entry)))
+                      eglot-server-programs))
   (add-to-list 'eglot-server-programs
                '((c-mode c++-mode) . ("clangd")))
   (add-to-list 'eglot-server-programs
-               '((haskell-mode) . ("haskell-language-server-wrapper" "--lsp")))
+               '((haskell-mode) . ("my-hls-wrapper")))
   (setq xref-backend-functions '(eglot-xref-backend xref-etags-backend))
   (setq tags-revert-without-query t
         xref-etags-mode t

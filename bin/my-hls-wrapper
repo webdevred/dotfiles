@@ -1,0 +1,17 @@
+#!/bin/bash
+
+ghc_version=$(ghc --version | awk '{ print $8 }')
+echo "GHC version: $ghc_version" >&2
+
+hspec_path=$(find "$HOME/.local/state/cabal/store/ghc-$ghc_version" -type f -name hspec-discover -exec dirname {} \; | head -n 1)
+
+if [ -n "$hspec_path" ]; then
+  echo "hspec-discover path: $hspec_path" >&2
+  export PATH="$hspec_path:$PATH"
+else
+  echo "hspec-discover not found, exiting." >&2
+fi
+
+echo "PATH is now: $PATH" >&2
+
+exec haskell-language-server --lsp
