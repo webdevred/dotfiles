@@ -60,6 +60,9 @@
                '((c-mode c++-mode) . ("clangd")))
   (add-to-list 'eglot-server-programs
                '((haskell-mode) . ("my-hls-wrapper")))
+  (setq-default eglot-workspace-configuration
+                '((haskell (formattingProvider . "fourmolu")
+                           (plugin (fourmolu (config (external . t)))))))
   (setq xref-backend-functions '(eglot-xref-backend xref-etags-backend))
   (setq tags-revert-without-query t
         xref-etags-mode t
