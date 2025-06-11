@@ -27,9 +27,7 @@
   (haskell-doc-mode 1)
   (haskell-indent-mode 1)
   (haskell-decl-scan-mode -1)
-  (interactive-haskell-mode 1)
-  (hindent-mode 1)
-  (add-hook 'before-save-hook #'hindent-reformat-buffer nil t))
+  (interactive-haskell-mode 1))
 
 (add-hook 'haskell-mode-hook #'my-haskell-mode-setup)
 
@@ -44,7 +42,6 @@
 
 (setq haskell-process-args-stack-ghci '("--ghc-options" "-w")
       haskell-tags-on-save t
-      hindent-reformat-buffer-on-save t
       haskell-process-show-debug-tips t
       haskell-doc-prettify-types t
       haskell-indentation-electric-flag t)

@@ -1,2 +1,6 @@
+" -*- mode: vimrc -*-
 set number
 set relativenumber
+
+set syntax=on
+set filetype=on

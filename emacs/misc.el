@@ -47,16 +47,6 @@
 (define-derived-mode jbeam-mode js-mode "Jbeam"
   "Major mode for Jbeam files.")
 
-(add-hook 'jbeam-mode-hook
-          (lambda ()
-            ;; Prevent any LSP client from activating here
-            (setq-local lsp-enabled-clients nil)
-            ;; Explicitly turn off the minor mode
-            (setq-local lsp-mode nil)
-            ;; If somehow already connected, disconnect
-            (when (fboundp 'lsp-disconnect)
-              (lsp-disconnect))))
-
 (add-to-list 'auto-mode-alist '("\\.jbeam\\'" . jbeam-mode))
 
 ;; Major mode hooks
@@ -150,4 +140,19 @@
 (advice-add 'switch-to-buffer :around #'switch-to-buffer-check-scratchpad)
 (advice-add 'switch-to-buffer-other-window :around #'switch-to-buffer-check-scratchpad)
 (advice-add 'switch-to-buffer-other-frame :around #'switch-to-buffer-check-scratchpad)
+
+(define-generic-mode 'bnf-mode
+  nil
+  nil
+  '(("<[^>]+>" . font-lock-function-name-face)
+    ("::=" . font-lock-keyword-face)
+    ("\"[^\"]*\"" . font-lock-string-face)
+    ("'[^']*'" . font-lock-string-face))
+  '("\\.bnf\\'")
+  nil
+  "Simple BNF mode for syntax highlighting.")
+
+;; Register 'bnf' language with org-babel for highlighting
+(add-to-list 'org-src-lang-modes '("bnf" . bnf))
+
 (provide 'misc)

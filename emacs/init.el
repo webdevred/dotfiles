@@ -47,8 +47,7 @@
   (global-undo-tree-mode))
 
 (use-package eglot
-  :ensure t
-  :hook ((c-mode c++-mode haskell-mode) . eglot-ensure)
+  :hook ((c-mode c++-mode haskell-mode yaml-mode) . eglot-ensure)
   :custom
   (eglot-extend-to-xref t)
   :config
@@ -56,10 +55,10 @@
         (cl-remove-if (lambda (entry)
                         (eq 'haskell-mode (car entry)))
                       eglot-server-programs))
-  (add-to-list 'eglot-server-programs
-               '((c-mode c++-mode) . ("clangd")))
-  (add-to-list 'eglot-server-programs
-               '((haskell-mode) . ("my-hls-wrapper")))
+  (dolist (pair '(((c-mode c++-mode) . ("clangd"))
+                  ((haskell-mode) . ("my-hls-wrapper"))
+                  ((yaml-mode) . ("yaml-language-server" "--stdio"))))
+    (add-to-list 'eglot-server-programs pair))
   (setq-default eglot-workspace-configuration
                 '((haskell (formattingProvider . "fourmolu")
                            (plugin (fourmolu (config (external . t)))))))
@@ -74,11 +73,7 @@
               ("M-."   . xref-find-definitions)
               ("M-,"   . xref-pop-marker-stack)))
 
-(use-package fish-mode
-  :mode (("\\.fish$" . fish-mode)))
-
 (use-package corfu
-  :ensure t
   :custom
   (corfu-auto t)
   (corfu-cycle t)
@@ -87,29 +82,6 @@
   (corfu-quit-at-boundary nil)
   :init
   (global-corfu-mode))
-
-(use-package php-mode
-  :ensure t)
-
-(use-package yaml-mode
-  :ensure t
-  :mode (("\\.ya?ml$" . yaml-mode)
-         ("/stack\\.yaml\\.lock\\'" . yaml-mode)))
-
-;; some time I may use haskell from repo again but for now I will be compiling
-;;
-;; (use-package haskell-mode
-;;   :mode (("\\.hs$" . haskell-mode))
-;;   :hook (;; (haskell-mode-hook . #'haskell-collapse-mode)
-;;          ;; (haskell-mode-hook . #'haskell-doc-mode)
-;;          (haskell-mode-hook . #'haskell-indent-mode)
-;;          (haskell-mode-hook . #'interactive-haskell-mode))
-;;   :config
-;;   '((haskell-tags-on-save t)
-;;     (hindent-reformat-buffer-on-save t)
-;;     (haskell-process-show-debug-tips)
-;;     (haskell-doc-prettify-types t))
-;;   :diminish 'haskell-doc-mode)
 
 (define-inline treemacs-hide-tags (file _)
   ""
@@ -156,11 +128,38 @@
   :init
   (ido-mode 1))
 
-(use-package hindent)
+;; languages
+
+;; some time I may use haskell from repo again but for now I will be compiling
+;;
+;; (use-package haskell-mode
+;;   :mode (("\\.hs$" . haskell-mode))
+;;   :hook (;; (haskell-mode-hook . #'haskell-collapse-mode)
+;;          ;; (haskell-mode-hook . #'haskell-doc-mode)
+;;          (haskell-mode-hook . #'haskell-indent-mode)
+;;          (haskell-mode-hook . #'interactive-haskell-mode))
+;;   :config
+;;   '((haskell-tags-on-save t)
+;;     (hindent-reformat-buffer-on-save t)
+;;     (haskell-process-show-debug-tips)
+;;     (haskell-doc-prettify-types t))
+;;   :diminish 'haskell-doc-mode)
+
+(use-package fish-mode
+  :mode (("\\.fish$" . fish-mode)))
+
+(use-package php-mode)
+
+(use-package yaml-mode
+  :mode (("\\.ya?ml$" . yaml-mode)
+         ("/stack\\.yaml\\.lock\\'" . yaml-mode)))
+
+(use-package vimrc-mode)
 
 (use-package tuareg
   :mode (("\\.ml$" . tuareg-mode)))
 
+;; load my other files
 (defun load-config-file (filename)
   "load file name in this config"
   (let ((filepath (concat (expand-file-name (file-name-directory user-init-file)) filename)))
