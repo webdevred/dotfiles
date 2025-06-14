@@ -123,10 +123,18 @@ let install cwd places =
 
 (* logic for uninstallation of dotfiles *)
 let uninstall places =
+  let rec rmrf path =
+    match Sys.is_directory path with
+    | true ->
+        Sys.readdir path
+        |> Array.iter (fun name -> rmrf (Filename.concat path name)) ;
+        Unix.rmdir path
+    | false -> Sys.remove path
+  in
   let rec remove_dotfile path =
     try
       let kind = (Unix.lstat path).st_kind in
-      match kind with Unix.S_DIR -> Sys.rmdir path | _ -> Unix.unlink path
+      match kind with Unix.S_DIR -> rmrf path | _ -> Unix.unlink path
     with Unix.Unix_error (Unix.ENOENT, _, _) -> ()
   in
   let do_uninstall dotfile =

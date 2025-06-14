@@ -47,7 +47,7 @@
   (global-undo-tree-mode))
 
 (use-package eglot
-  :hook ((c-mode c++-mode haskell-mode yaml-mode) . eglot-ensure)
+  :hook ((c-mode c++-mode haskell-mode haskell-cabal-mode yaml-mode) . eglot-ensure)
   :custom
   (eglot-extend-to-xref t)
   :config
@@ -56,7 +56,7 @@
                         (eq 'haskell-mode (car entry)))
                       eglot-server-programs))
   (dolist (pair '(((c-mode c++-mode) . ("clangd"))
-                  ((haskell-mode) . ("my-hls-wrapper"))
+                  ((haskell-mode haskell-cabal-mode) . ("my-hls-wrapper"))
                   ((yaml-mode) . ("yaml-language-server" "--stdio"))))
     (add-to-list 'eglot-server-programs pair))
   (setq-default eglot-workspace-configuration
@@ -68,7 +68,6 @@
         large-file-warning-threshold nil
         eldoc-idle-delay 0.5)
   :bind (:map eglot-mode-map
-              ("C-c r" . eglot-rename)
               ("C-c a" . eglot-code-actions)
               ("M-."   . xref-find-definitions)
               ("M-,"   . xref-pop-marker-stack)))

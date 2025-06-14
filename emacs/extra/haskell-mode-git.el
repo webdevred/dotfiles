@@ -38,7 +38,7 @@
 (with-eval-after-load 'haskell-mode
   (define-key haskell-mode-map (kbd "C-c l") #'haskell-run-hlint)
   (define-key haskell-mode-map (kbd "C-c t") #'haskell-run-tests)
-  (define-key haskell-mode-map (kbd "C-c a") #'haskell-command-insert-language-pragma))
+  (define-key haskell-mode-map (kbd "C-c C-a") #'haskell-command-insert-language-pragma))
 
 (setq haskell-process-args-stack-ghci '("--ghc-options" "-w")
       haskell-tags-on-save t

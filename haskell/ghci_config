@@ -1,3 +1,4 @@
+-- -*- mode: haskell -*-
 :set prompt "λ> "
 :set -XOverloadedStrings
 :set editor vim

@@ -14,10 +14,11 @@ fish:.config/fish
 emacs:.config/emacs:hardlink
 git:.config/git
 misc/vimrc:.vimrc
-misc/cabal_config:.config/cabal/config
-misc/ghci_config:.ghci::700
 misc/gdbinit:.config/gdb/gdbinit
-bin/my-hls-wrapper:.local/bin/my-hls-wrapper::700
+
+# haskell development
+haskell/ghci_config:.ghci::700
+haskell/my-hls-wrapper.sh:.local/bin/my-hls-wrapper::700
 
 # misc
 misc/yamlfix.toml:.config/yamlfix/config.toml:hardlink
