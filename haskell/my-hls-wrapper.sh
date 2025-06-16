@@ -30,7 +30,12 @@ fi
 echo "PATH is now: $PATH" >&2
 
 if command -v haskell-language-server >/dev/null 2>&1; then
-  exec haskell-language-server --lsp
+  if [ -t 0 ]; then
+    haskell-language-server -d >lsp_log 2>&1
+    echo "Saved errors lsp_log" >&2
+  else
+    exec haskell-language-server --lsp
+  fi
 else
   echo "Error: haskell-language-server not found in PATH." >&2
   exit 1

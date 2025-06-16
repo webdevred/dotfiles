@@ -21,6 +21,19 @@
  '(ring-bell-function #'ignore)
  '(warning-minimum-level :error))
 
+(setq user-config-dir
+  (expand-file-name (file-name-directory user-init-file)))
+
+(setq backup-directory-alist
+      `((".*" . ,(concat user-config-dir "backups/"))))
+
+(setq auto-save-file-name-transforms
+      `((".*" ,(concat user-config-dir "auto-saves/") t)))
+
+(dolist (dir (list (concat user-config-dir "backups/")
+                   (concat user-config-dir "auto-saves/")))
+  (unless (file-directory-p dir)
+    (make-directory dir t)))
 
 ;; stuff for writing elisp-koans
 (defun get-quoted-form-at-point ()
