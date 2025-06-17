@@ -82,18 +82,19 @@
   :init
   (global-corfu-mode))
 
-(define-inline treemacs-hide-tags (file _)
+(define-inline treemacs-hide-boring-files (file _)
   ""
   (declare (side-effect-free t) (pure t))
   (inline-letevals (file)
     (inline-quote
-     (string= (file-name-nondirectory ,file) "TAGS"))))
+     (let ((filename (file-name-nondirectory ,file)))
+       (cl-some (lambda (ignored-file) (string= filename ignored-file)) '("TAGS" "dist-newstyle" ".stack-work"))))))
 
 (use-package treemacs
   :init
   (setq treemacs-no-png-images t)
   :config
-  (add-to-list 'treemacs-ignored-file-predicates #'treemacs-hide-tags)
+  (add-to-list 'treemacs-ignored-file-predicates #'treemacs-hide-boring-files)
   :bind
   (:map global-map
         ("M-0"       . treemacs-select-window)
