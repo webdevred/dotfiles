@@ -62,6 +62,15 @@
 
 (add-to-list 'auto-mode-alist '("\\.jbeam\\'" . jbeam-mode))
 
+(defun set-mode-for-backupish-files ()
+  (when (and buffer-file-name
+             (string-match "\\(.*\\)~[^/]*\\'" buffer-file-name))
+    (let ((base (match-string 1 buffer-file-name)))
+      (let ((mode (assoc-default base auto-mode-alist 'string-match)))
+        (when mode
+          (funcall mode))))))
+(add-hook 'find-file-hook 'set-mode-for-backupish-files)
+
 ;; Major mode hooks
 (add-hook 'emacs-lisp-mode-hook
   (lambda ()
