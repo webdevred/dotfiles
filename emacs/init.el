@@ -11,15 +11,18 @@
         '(("gnu" . "https://elpa.gnu.org/packages/")
           ("melpa" . "https://melpa.org/packages/")))
 
+(package-initialize)
+
+(unless package-archive-contents
+  (package-refresh-contents))
 
 (setq use-package-always-ensure t)
 (setq use-package-always-defer t)
 
-(package-initialize)
-
 (unless (package-installed-p 'use-package)
-  (package-refresh-contents)
   (package-install 'use-package))
+
+(require 'use-package)
 
 (use-package no-littering
   :demand t)
