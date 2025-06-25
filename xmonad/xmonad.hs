@@ -14,9 +14,8 @@ import Data.ByteString.Lazy (ByteString)
 import Data.Char (ord, toLower)
 import Data.Hashable
 import Data.Int (Int32)
-import Data.List (find, genericLength, sortOn)
+import Data.List (isPrefixOf,find, sortOn)
 import Data.Map (Map)
-import Data.Maybe (fromMaybe)
 import Data.Ord (Down (..))
 import Data.String (fromString)
 import Data.Text (Text)
@@ -506,6 +505,9 @@ myConfig =
 doShiftDynamic :: WorkspaceId -> ManageHook
 doShiftDynamic ws = liftX (addHiddenWorkspace ws) >> doShift ws
 
+(=^?) :: Query String -> String -> Query Bool
+q =^? prefix = fmap (isPrefixOf prefix) q
+
 myManageHook :: ManageHook
 myManageHook =
   composeAll
@@ -517,6 +519,7 @@ myManageHook =
         --> (hasBorder False <+> doRectFloat (W.RationalRect 0.1 0.1 0.2 0.8))
     , className =? "firefox" <&&> resource =? "Toolkit" --> doFullFloat
     , className =? "cs2" --> doShiftDynamic "game"
+    , className =^? "steam_app_" --> doShiftDynamic "game"
     ]
     <+> namedScratchpadManageHook scratchpads
 
