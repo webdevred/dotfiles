@@ -9,7 +9,8 @@
 
 (defun compile-with-haskell-process-type (fun)
   (let ((stack-or-cabal (haskell-process-type))
-        (compilation-environment '("TERM=xterm-256color")))
+        (compilation-environment '("TERM=xterm-256color"))
+        (default-directory (projectile-project-root)))
     (if (eq stack-or-cabal 'ghci)
         (message "no project directory found")
       (compile (funcall fun stack-or-cabal)))))
@@ -20,7 +21,7 @@
    (lambda (process-type)
      (if (eq process-type 'stack-ghci)
          "stack test --color always"
-       "cabal test"))))
+       "cabal test --test-show-details=direct"))))
 
 (defun my-haskell-mode-setup ()
   (haskell-collapse-mode 1)
@@ -28,6 +29,8 @@
   (haskell-indent-mode 1)
   (haskell-decl-scan-mode -1)
   (interactive-haskell-mode 1))
+
+(add-to-list 'safe-local-variable-values '(haskell-process-type . cabal-repl))
 
 (add-hook 'haskell-mode-hook #'my-haskell-mode-setup)
 
