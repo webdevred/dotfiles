@@ -122,6 +122,21 @@
 (use-package rainbow-mode
   :hook prog-mode)
 
+(use-package rainbow-delimiters
+  :hook ((haskell-mode emacs-lisp-mode) . rainbow-delimiters-mode)
+  :config
+  (custom-set-faces
+   '(rainbow-delimiters-depth-1-face ((t (:foreground "#FF6F61")))) ; Coral red
+   '(rainbow-delimiters-depth-2-face ((t (:foreground "#6B5B95")))) ; Purple
+   '(rainbow-delimiters-depth-3-face ((t (:foreground "#88B04B")))) ; Olive green
+   '(rainbow-delimiters-depth-4-face ((t (:foreground "#F7CAC9")))) ; Light pink
+   '(rainbow-delimiters-depth-5-face ((t (:foreground "#92A8D1")))) ; Soft blue
+   '(rainbow-delimiters-depth-6-face ((t (:foreground "#955251")))) ; Dark rose
+   '(rainbow-delimiters-depth-7-face ((t (:foreground "#B565A7")))) ; Magenta
+   '(rainbow-delimiters-depth-8-face ((t (:foreground "#009B77")))) ; Teal green
+   '(rainbow-delimiters-depth-9-face ((t (:foreground "#DD4124")))) ; Red-orange
+   ))
+
 (use-package ido
   :config
   (setq
