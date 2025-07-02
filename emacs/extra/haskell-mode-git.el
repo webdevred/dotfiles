@@ -31,6 +31,26 @@
   (interactive-haskell-mode 1))
 
 (add-to-list 'safe-local-variable-values '(haskell-process-type . cabal-repl))
+(defun cabal-args-are-safe (val)
+  (let ((function (car val))
+        (variable-name (cadr val))
+        (variable-val (caddr val)))
+    (and (equal function 'setq-local)
+         (equal variable-name 'haskell-process-args-cabal-repl)
+         (consp variable-val)
+         (let ((append-function (car variable-val))
+               (new-args (cadr variable-val))
+               (old-args (caddr variable-val)))
+           (and (equal append-function 'append)
+                (let ((args (if (and (consp new-args)
+                                     (eq (car new-args) 'quote))
+                                (cadr new-args)
+                              new-args)))
+                  (and (listp args)
+                       (cl-every #'stringp args)))
+                (equal old-args 'haskell-process-args-cabal-repl))))))
+
+(put 'eval 'safe-local-variable #'cabal-args-are-safe)
 
 (add-hook 'haskell-mode-hook #'my-haskell-mode-setup)
 
