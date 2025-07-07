@@ -1,4 +1,3 @@
-;; -*- lexical-binding: t; -*-
 (deftheme cozy-pink
   "A simple theme for Emacs.")
 

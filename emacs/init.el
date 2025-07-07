@@ -1,4 +1,4 @@
-;;; package --- Summary: init file  -*- lexical-binding: t; -*-
+;;; package --- Summary: init file
 ;;; Commentary:
 ;;; Code:
 
