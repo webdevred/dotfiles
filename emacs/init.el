@@ -49,8 +49,18 @@
   :init
   (global-undo-tree-mode))
 
+(defun eglot-unmanage-buffer ()
+  "Force Eglot to stop managing this buffer if it's on the denylist."
+  (when (and buffer-file-name
+             (not (string= "cabal.project.local" (file-name-nondirectory buffer-file-name)))
+             (string-match-p "/cabal\\.project\\..*\\'" buffer-file-name)
+             (eglot-managed-p))
+    (message "[Eglot] Disabling eglot-managed-mode for: %s" buffer-file-name)
+    (eglot--managed-mode-off)))
+
 (use-package eglot
-  :hook ((c-mode c++-mode haskell-mode haskell-cabal-mode yaml-mode) . eglot-ensure)
+  :hook (((c-mode c++-mode haskell-mode haskell-cabal-mode) . eglot-ensure)
+         (eglot-managed-mode . eglot-unmanage-buffer))
   :custom
   (eglot-extend-to-xref t)
   :config
@@ -169,6 +179,7 @@
 (use-package php-mode)
 
 (use-package yaml-mode
+  :hook ((yaml-mode) . eglot-ensure)
   :mode (("\\.ya?ml$" . yaml-mode)
          ("/stack\\.yaml\\.lock\\'" . yaml-mode)))
 
