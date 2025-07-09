@@ -111,7 +111,7 @@
 
 ; deb key bindings
 (global-set-key (kbd "C-c b") (lambda () (interactive) (projectile-switch-to-buffer)))
-(global-set-key (kbd "C-c d") (lambda () (interactive) (delete-matching-lines)))
+(global-set-key (kbd "C-c d") (lambda () (interactive) (delete-matching-lines (concat "^" comment-start))))
 (global-set-key (kbd "C-c r") (lambda () (interactive) (load user-init-file) ) )
 (global-set-key (kbd "C-c u") (lambda () (interactive) (package-upgrade-all nil) ))
 

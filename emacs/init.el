@@ -78,12 +78,18 @@
                              (lambda (new-name) (eq new-name (car existing))) (or (and (= 1 (length (car new))) (car new)) (list (car new)))))
                           eglot-server-programs))
       (add-to-list 'eglot-server-programs new)))
+  (advice-add
+   'eglot--format-markup :around
+   (lambda (orig-fun &rest args)
+     (let ((markdown-enable-math 1))
+       (apply orig-fun args))))
   (setq xref-backend-functions '(eglot-xref-backend xref-etags-backend))
   (setq tags-revert-without-query t
         xref-etags-mode t
         large-file-warning-threshold nil
         eldoc-idle-delay 0.5)
   :bind (:map eglot-mode-map
+              ("C-c C-d" . eldoc-doc-buffer)
               ("C-c a" . eglot-code-actions)
               ("M-."   . xref-find-definitions)
               ("M-,"   . xref-pop-marker-stack)))
@@ -175,6 +181,9 @@
 ;;     (haskell-process-show-debug-tips)
 ;;     (haskell-doc-prettify-types t))
 ;;   :diminish 'haskell-doc-mode)
+
+(use-package markdown-mode
+  :mode ("\\.md\\'" . markdown-mode))
 
 (use-package fish-mode
   :mode (("\\.fish$" . fish-mode)))
