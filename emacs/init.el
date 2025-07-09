@@ -62,24 +62,30 @@
   :hook (((c-mode c++-mode haskell-mode haskell-cabal-mode) . eglot-ensure)
          (eglot-managed-mode . eglot-unmanage-buffer))
   :custom
+  (eglot-events-buffer-config '(:format lisp))
+  (eglot-autoshutdown t)
+  (eglot-autoreconnect t)
   (eglot-extend-to-xref t)
   :config
-  (setq eglot-server-programs
-        (cl-remove-if (lambda (entry)
-                        (eq 'haskell-mode (car entry)))
-                      eglot-server-programs))
-  (dolist (pair '(((c-mode c++-mode) . ("clangd"))
-                  ((haskell-mode haskell-cabal-mode) . ("my-hls-wrapper"))
-                  ((yaml-mode) . ("yaml-language-server" "--stdio"))))
-    (add-to-list 'eglot-server-programs pair))
-  (setq-default eglot-workspace-configuration
-                '((haskell (formattingProvider . "fourmolu")
-                           (plugin (fourmolu (config (external . t)))))))
+  (let ((my-eglot-server-programs
+         '(((c-mode c++-mode) . ("clangd"))
+           ((haskell-mode haskell-cabal-mode) . ("my-hls-wrapper"))
+           ((yaml-mode) . ("yaml-language-server" "--stdio")))))
+    (dolist (new my-eglot-server-programs)
+      (setq eglot-server-programs
+            (cl-remove-if (lambda (existing)
+                            (cl-find-if
+                             (lambda (new-name) (eq new-name (car existing))) (or (and (= 1 (length (car new))) (car new)) (list (car new)))))
+                          eglot-server-programs))
+      (add-to-list 'eglot-server-programs new)))
   (setq xref-backend-functions '(eglot-xref-backend xref-etags-backend))
   (setq tags-revert-without-query t
         xref-etags-mode t
         large-file-warning-threshold nil
         eldoc-idle-delay 0.5)
+  (setq-default eglot-workspace-configuration
+                '((haskell (formattingProvider . "fourmolu")
+                           (plugin (fourmolu (config (external . t)))))))
   :bind (:map eglot-mode-map
               ("C-c a" . eglot-code-actions)
               ("M-."   . xref-find-definitions)
