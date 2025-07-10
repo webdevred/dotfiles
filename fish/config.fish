@@ -10,15 +10,15 @@ set -x vi
 set -U fish_user_paths ~/.local/bin $fish_user_paths
 
 if status is-interactive
-  # Commands to run in interactive sessions can go here
+    # Commands to run in interactive sessions can go here
 end
 
 function df
- command df -x efivarfs -x tmpfs -x zfs -hT $argv
+    command df -x efivarfs -x tmpfs -x zfs -hT $argv
 end
 
 function lsblk
- command lsblk -e 7 $argv
+    command lsblk -e 7 $argv
 end
 
 function fish_title
@@ -52,7 +52,6 @@ function cabal
     end
 end
 
-
 function fish_prompt
     if not set -q VIRTUAL_ENV_DISABLE_PROMPT
         set -g VIRTUAL_ENV_DISABLE_PROMPT true
@@ -70,12 +69,11 @@ function fish_prompt
     set_color normal
 end
 
-
 function myyamlfix
-  set -l yaml_files (find . \( -name "*.yaml" -o -name ".*.yaml" -o -name "*.yml" -o -name ".*.yml" \) -type f -not -name ".hlint.yaml")
-  if test (count $yaml_files) -eq 0
-    echo "No YAML files found."
-    return 1
-  end
-  yamlfix -c $HOME/.config/yamlfix/config.toml $yaml_files $argv
+    set -l yaml_files (find . \( -name "*.yaml" -o -name ".*.yaml" -o -name "*.yml" -o -name ".*.yml" \) -type f -not -name ".hlint.yaml")
+    if test (count $yaml_files) -eq 0
+        echo "No YAML files found."
+        return 1
+    end
+    yamlfix -c $HOME/.config/yamlfix/config.toml $yaml_files $argv
 end
