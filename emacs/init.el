@@ -28,7 +28,7 @@
   :demand t)
 
 (use-package diminish
-  :init
+  :config
   (diminish 'auto-revert-mode)
   (diminish 'rainbow-mode)
   (diminish 'eldoc-mode))
@@ -38,15 +38,14 @@
   (editorconfig-mode 1))
 
 (use-package magit
-  :hook (magit-status . (lambda () (which-function-mode 0))))
+  :commands (magit-status magit-blame magit-log))
 
 (use-package git-modes)
 
 (use-package undo-tree
+  :diminish 'undo-tree-mode
   :config
   (setq undo-tree-auto-save-history 5)
-  :diminish 'undo-tree-mode
-  :init
   (global-undo-tree-mode))
 
 (defun eglot-unmanage-buffer ()
@@ -103,7 +102,7 @@
   (corfu-preselect 'first)
   (corfu-quit-no-match 'separator)
   (corfu-quit-at-boundary nil)
-  :init
+  :config
   (global-corfu-mode))
 
 (define-inline treemacs-hide-boring-files (file _)
@@ -130,15 +129,11 @@
 
 (use-package projectile
   :diminish 'projectile-mode
+  :commands projectile-command-map
   :bind ("C-c C-p" . projectile-command-map)
-  :init
+  :config
   (projectile-mode +1)
   (setq projectile-use-git-grep t))
-
-(use-package which-func
-  :init
-  (which-function-mode 1)
-  :hook (magit-status . (lambda () (which-function-mode 0))))
 
 (use-package rainbow-mode
   :hook prog-mode)
@@ -164,7 +159,6 @@
    ido-enable-flex-matching t
    ido-everywhere t
    ido-ignore-files '("\\`\\.nfs" "\\`#.*" "\\`.*~"))
-  :init
   (ido-mode 1))
 
 ;; languages
@@ -188,7 +182,7 @@
   :mode ("\\.md\\'" . markdown-mode))
 
 (use-package fish-mode
-  :mode (("\\.fish$" . fish-mode)))
+  :mode ("\\.fish\\'" . fish-mode))
 
 (use-package php-mode)
 
@@ -200,7 +194,7 @@
 (use-package vimrc-mode)
 
 (use-package tuareg
-  :mode (("\\.ml$" . tuareg-mode)))
+  :mode ("\\.ml\\'" . tuareg-mode))
 
 ;; load my other files
 (defun load-config-file (filename)
