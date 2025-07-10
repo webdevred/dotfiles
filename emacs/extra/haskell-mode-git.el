@@ -72,7 +72,6 @@
   (define-key haskell-mode-map (kbd "C-c C-a") #'haskell-command-insert-language-pragma))
 
 (setq haskell-process-args-stack-ghci '("--ghc-options" "-w")
-      haskell-tags-on-save t
       haskell-process-show-debug-tips t
       haskell-doc-prettify-types t
       haskell-indentation-electric-flag t)

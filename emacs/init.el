@@ -66,6 +66,10 @@
   (eglot-autoshutdown t)
   (eglot-autoreconnect t)
   (eglot-extend-to-xref t)
+  (xref-backend-functions '(eglot-xref-backend xref-etags-backend))
+  (tags-revert-without-query t)
+  (large-file-warning-threshold nil)
+  (eldoc-idle-delay 0.5)
   :config
   (let ((my-eglot-server-programs
          '(((c-mode c++-mode) . ("clangd"))
@@ -83,11 +87,6 @@
    (lambda (orig-fun &rest args)
      (let ((markdown-enable-math 1))
        (apply orig-fun args))))
-  (setq xref-backend-functions '(eglot-xref-backend xref-etags-backend))
-  (setq tags-revert-without-query t
-        xref-etags-mode t
-        large-file-warning-threshold nil
-        eldoc-idle-delay 0.5)
   (setq-default eglot-workspace-configuration
                 '((haskell (formattingProvider . "fourmolu")
                            (plugin (fourmolu (config (external . t)))))))
