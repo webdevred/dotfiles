@@ -129,7 +129,7 @@
 
 (use-package projectile
   :diminish 'projectile-mode
-  :commands projectile-command-map
+  :commands projectile-command-map projectile-project-root
   :bind ("C-c C-p" . projectile-command-map)
   :config
   (projectile-mode +1)
