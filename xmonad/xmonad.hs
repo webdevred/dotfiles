@@ -14,7 +14,7 @@ import Data.ByteString.Lazy (ByteString)
 import Data.Char (ord, toLower)
 import Data.Hashable
 import Data.Int (Int32)
-import Data.List (isPrefixOf,find, sortOn)
+import Data.List (find, isPrefixOf, sortOn)
 import Data.Map (Map)
 import Data.Ord (Down (..))
 import Data.String (fromString)
@@ -100,18 +100,36 @@ xmobarStatusBar (screen, bar) = statusBarProp cmd $ pure myXmobarPP
 untitledIfNull :: String -> String
 untitledIfNull v = bool v "untitled" $ null v
 
+emojiRanges :: [(Int, Int)]
+emojiRanges =
+  [ (0x1F600, 0x1F64F) -- Emoticons
+  , (0x1F300, 0x1F5FF) -- Miscellaneous Symbols and Pictographs
+  , (0x1F680, 0x1F6FF) -- Transport and Map Symbols
+  , (0x1F1E6, 0x1F1FF) -- Regional Indicator Symbols (flags)
+  , (0x2600, 0x26FF) -- Miscellaneous Symbols (includes some weather, astrology)
+  , (0x2700, 0x27BF) -- Dingbats (including some emoji-like symbols)
+  , (0x1F900, 0x1F9FF) -- Supplemental Symbols and Pictographs (newer emojis: food, animals, etc.)
+  , (0x1FA70, 0x1FAFF) -- Symbols and Pictographs Extended-A (newer emojis like crafts, hands)
+  , (0x1F700, 0x1F77F) -- Alchemical Symbols (less common emojis, but sometimes used)
+  , (0x1F780, 0x1F7FF) -- Geometric Shapes Extended
+  , (0x1F800, 0x1F8FF) -- Supplemental Arrows-C
+  , (0x1F1E6, 0x1F1FF) -- Regional Indicator Symbols (flags, repeated for clarity)
+  , (0x1F000, 0x1F02F) -- Mahjong Tiles and Domino Tiles (some used as emojis)
+  , (0x1F0A0, 0x1F0FF) -- Playing Cards
+  , (0x1F018, 0x1F270) -- Various Symbols and Pictographs
+  , (0x1F650, 0x1F67F) -- Ornamental Dingbats
+  , (0x1F1E6, 0x1F1FF) -- Flags (repetition for completeness)
+  , (0x1F3FB, 0x1F3FF) -- Emoji Modifier Fitzpatrick skin tone modifiers
+  , (0x200D, 0x200D) -- Zero Width Joiner (used to combine emojis)
+  , (0x30FB, 0x30BFB) -- Katakana middle dot '・'
+  , (8967, 8967) -- '⌇'
+  ]
+
 excludeEmojis :: String -> String
-excludeEmojis = filter isEmoji
+excludeEmojis = filter isNotEmoji
   where
-    emojiRanges =
-      [ (0x1F600, 0x1F64F) -- Emoticons
-      , (0x1F300, 0x1F5FF) -- Miscellaneous Symbols and Pictographs
-      , (0x1F680, 0x1F6FF) -- Transport and Map Symbols
-      , (0x1F1E6, 0x1F1FF) -- Regional Indicator Symbols
-      ]
-    charInRange c (start, end) = ord c `elem` [start .. end]
-    isEmoji :: Char -> Bool
-    isEmoji c = not $ any (charInRange c) emojiRanges
+    isNotEmoji code = not $ any (inEmojiRange $ ord code) emojiRanges
+    inEmojiRange code (start, end) = code >= start && code <= end
 
 myXmobarPP :: PP
 myXmobarPP =
