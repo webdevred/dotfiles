@@ -32,8 +32,9 @@ function cabal
     end
 
     set -l build_commands build install rebuild repl
+
     if test (count $argv) -ge 1
-        if contains $argv[1] $build_commands
+        if contains -- $argv[1] $build_commands
             printf "fish: building with --jobs=%s\n" $max_jobs
             if test $argv[1] = install
                 set -l extra_flags \
