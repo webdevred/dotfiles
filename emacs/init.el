@@ -186,9 +186,13 @@
 
 (use-package php-mode)
 
+(defun my-yaml-eglot-setup ()
+  (when (executable-find "yaml-language-server")
+    (eglot-ensure)))
+
 (use-package yaml-mode
-  :hook ((yaml-mode) . eglot-ensure)
-  :mode (("\\.ya?ml$" . yaml-mode)
+  :hook (yaml-mode . my-yaml-eglot-setup)
+  :mode (("\\.ya?ml\\'" . yaml-mode)
          ("/stack\\.yaml\\.lock\\'" . yaml-mode)))
 
 (use-package vimrc-mode)
