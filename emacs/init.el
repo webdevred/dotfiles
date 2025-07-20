@@ -141,7 +141,7 @@
   (setq rainbow-x-colors nil))
 
 (use-package rainbow-delimiters
-  :hook ((haskell-mode emacs-lisp-mode lisp-data-mode) . rainbow-delimiters-mode)
+  :hook ((haskell-mode lisp-data-mode) . rainbow-delimiters-mode)
   :config
   (custom-set-faces
    '(rainbow-delimiters-depth-1-face ((t (:foreground "#FF6F61")))) ; Coral red
