@@ -1,43 +1,96 @@
-* XMonad configuration
+* Dotfiles Configuration
 
-** Introduction
+This repository contains my personal dotfiles for managing my environment, including XMonad, terminal, shell, and Emacs configurations.
 
-This is my configuration, still simple.
+** Overview
 
-My goal is to create a good workflow for me to work with Emacs and Firefox.
+The goal of this setup is to create a smooth workflow optimized for Emacs and Firefox, while maintaining compatibility with Steam and gaming.
 
-Another important thing is that I should be able to use Steam and play games without problems.
+I use picom, rofi, and xmobar alongside XMonad. Their config files are included here.
 
-** Software I use
+Emacs configuration is included in this repository under ~/.config/emacs.
 
-I use picom, rofi and xmobar for this setup and the configuration files for those are in included in this repo.
-The reason for this is that I dislike having .git in my home directory and most of the stuff in ~/.config I dont want to commit to Git.
-My Emacs configuration can be found in a separate repo.
+** Managed Software
 
-** Required software
+These are the main software packages managed and configured here, tested mainly on Ubuntu:
 
-|----------------+-------------------+--------------------------------------------------------------|
-| Software       | Ubuntu            | Description                                                  |
-|----------------+-------------------+--------------------------------------------------------------|
-| xmonad         | xmonad            | My window manager                                            |
-| xmobar         | xmobar            | Bar with extra information                                   |
-| xmonad-contrib | libghc-xmonad-dev | Extra functionality not available in the Xmonad package      |
-| Aeson          | libghc-aeson-dev  | Used to parse data from PulseAudio for audio sink switcher   |
-| Alacritty      | alacritty         | Very nice terminal                                           |
-| fish           | fish              | Very nice shell                                              |
-| feh            | feh               | Wallpaper manager                                            |
-| picom          | picom             | Compositor                                                   |
-| rofi           | rofi              | Application launcher                                         |
-|----------------+-------------------+--------------------------------------------------------------|
+|-----------------+----------------------------------------------------------|
+| Software        | Description                                              |
+|-----------------+----------------------------------------------------------|
+| xmonad          | Window manager                                           |
+| xmobar          | Status bar                                               |
+| xmonad-contrib  | Extra xmonad modules                                     |
+| Aeson           | JSON parsing library (used for PulseAudio sink switcher) |
+| alacritty       | Terminal emulator                                        |
+| fish            | Shell                                                    |
+| feh             | Wallpaper setter                                         |
+| picom           | Compositor                                               |
+| rofi            | Application launcher                                     |
+| emacs           | Text editor with custom configuration                    |
+| git             | Version control system                                   |
+| python3-yamlfix | Yamlfix tool for YAML fixing                             |
+| btop            | Resource monitor                                         |
+| mpv             | Media player                                             |
+|-----------------+----------------------------------------------------------|
 
-*** Install dependencies on Ubuntu
+** Installing dependencies on Ubuntu
 
 #+begin_src bash
-  sudo apt install xmonad xmobar libghc-xmonad-dev libghc-aeson-dev alacritty fish feh picom rofi
+sudo apt install xmonad xmobar libghc-xmonad-dev libghc-aeson-dev alacritty fish feh picom rofi emacs git python3-yamlfix btop mpv
 #+end_src
 
-*** Install the configuration into .config
+** Installation
+
+To install the configuration files, run:
 
 #+begin_src bash
-  ./install.sh
-#+end_src  
+./install.sh
+#+end_src
+
+or use the new install.ml program (work in progress) which will eventually replace install.sh.
+
+** Xmobar Panels
+
+I use several xmobar panel configurations for different setups/screens:
+
+- big_screen_config.hs
+- laptop_bottom_config.hs
+- laptop_top_config.hs
+- small_screen_bottom_config.hs
+- small_screen_top_config.hs
+
+** Emacs Configuration
+
+This repo contains a full Emacs setup tailored for coding and note-taking.
+
+Highlights include:
+
+- use-package-based package management with deferred loading.
+- LSP support with Eglot configured for C, C++, Haskell, YAML, and more.
+- Custom handling to disable Eglot on cabal.project.* files (like cabal.project.dev) because HLS does **not** support them, avoiding false error messages.
+- Undo-tree for undo history management.
+- Treemacs for project file tree browsing.
+- Projectile for project management.
+- Rainbow delimiters and rainbow mode for better syntax visualization.
+- Multiple language modes: Haskell, Markdown, Fish, PHP, YAML, Vimscript, OCaml (tuareg).
+- Custom keybindings and settings for Haskell development, including compilation and testing helpers.
+- A cozy pink theme.
+
+** Vimscript and Fish Mode
+
+I include fish-mode and vimrc-mode in Emacs because sometimes I need to edit Vim and Fish configuration files directly in Emacs. This allows me to edit those config files (.vimrc and fish config) with proper syntax highlighting and editing support inside Emacs while keeping those files versioned in this repo.
+
+** Extra benefits of my HLS + Eglot setup
+
+- Custom my-hls-wrapper.sh script improves integration and flexibility with Haskell Language Server.
+- Automatically disables Eglot management on cabal.project.* files (e.g. cabal.project.dev) because HLS does **not** support them, preventing numerous erroneous error messages.
+- Fine-tuned performance and error display settings such as autoshutdown, autoreconnect, and eldoc delay.
+- Customized keybindings for quick access to common LSP features.
+- Enhanced markup formatting supporting markdown math for better documentation experience.
+
+** Notes
+
+- I avoid initializing Git repositories directly in my home directory to keep it clean and uncluttered. Instead, all config files are managed inside this dotfiles repository, and symlinked from there to their appropriate locations (mostly under ~/.config/). This setup allows easy version control, centralized management, and a tidy home directory.
+- Emacs configuration, along with all other software configurations, is kept organized in separate folders within this repository for clarity and maintainability.
+
+- The install.ml script is a future plan to replace install.sh and unify installation logic.
