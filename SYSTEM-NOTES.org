@@ -1,0 +1,28 @@
+* Sudo Configuration
+
+Preserve editor variables and grant full sudo access to members of the =sudo= group.
+
+#+BEGIN_SRC conf
+Defaults:%sudo env_keep += "EDITOR SYSTEMD_EDITOR"
+%sudo   ALL=(ALL:ALL) ALL
+#+END_SRC
+
+* Haskell
+
+Custom settings for Haskell Language Server to ensure that I get the same flags turned when I build HLS on a new machine:
+
+#+BEGIN_SRC haskell-cabal
+package haskell-language-server
+  flags: -brittany
+         -floskell
+         -ormolu
+         -stylishHaskell
+         +fourmolu
+#+END_SRC
+
+Generate documentation and debugging symbols for when developing a project:
+
+#+BEGIN_SRC haskell-cabal
+package *
+  ghc-options: -haddock -g -O0
+#+END_SRC
