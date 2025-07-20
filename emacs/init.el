@@ -44,9 +44,10 @@
 
 (use-package undo-tree
   :diminish 'undo-tree-mode
-  :config
-  (setq undo-tree-auto-save-history 5)
-  (global-undo-tree-mode))
+  :hook ((prog-mode . undo-tree-mode)
+         (text-mode . undo-tree-mode))
+  :custom
+  (undo-tree-auto-save-history t))
 
 (defun eglot-unmanage-buffer ()
   "Force Eglot to stop managing this buffer if it's on the denylist."
@@ -96,14 +97,14 @@
               ("M-,"   . xref-pop-marker-stack)))
 
 (use-package corfu
+  :hook ((prog-mode . corfu-mode)
+         (text-mode . corfu-mode))
   :custom
   (corfu-auto t)
   (corfu-cycle t)
   (corfu-preselect 'first)
   (corfu-quit-no-match 'separator)
-  (corfu-quit-at-boundary nil)
-  :config
-  (global-corfu-mode))
+  (corfu-quit-at-boundary nil))
 
 (define-inline treemacs-hide-boring-files (file _)
   ""
@@ -155,11 +156,12 @@
    ))
 
 (use-package ido
-  :config
-  (setq
-   ido-enable-flex-matching t
+  :defer nil
+  :custom
+  (ido-enable-flex-matching t
    ido-everywhere t
    ido-ignore-files '("\\`\\.nfs" "\\`#.*" "\\`.*~"))
+  :config
   (ido-mode 1))
 
 ;; languages
