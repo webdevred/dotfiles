@@ -136,7 +136,9 @@
   (setq projectile-use-git-grep t))
 
 (use-package rainbow-mode
-  :hook prog-mode)
+  :hook prog-mode
+  :config
+  (setq rainbow-x-colors nil))
 
 (use-package rainbow-delimiters
   :hook ((haskell-mode emacs-lisp-mode lisp-data-mode) . rainbow-delimiters-mode)
