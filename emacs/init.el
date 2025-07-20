@@ -114,8 +114,8 @@
        (cl-some (lambda (ignored-file) (string= filename ignored-file)) '("TAGS" "dist-newstyle" ".stack-work"))))))
 
 (use-package treemacs
-  :init
-  (setq treemacs-no-png-images t)
+  :custom
+  (treemacs-no-png-images t)
   :config
   (add-to-list 'treemacs-ignored-file-predicates #'treemacs-hide-boring-files)
   :bind
@@ -131,14 +131,13 @@
   :diminish 'projectile-mode
   :commands projectile-command-map projectile-project-root
   :bind ("C-c C-p" . projectile-command-map)
-  :config
-  (projectile-mode +1)
-  (setq projectile-use-git-grep t))
+  :custom
+  (projectile-use-git-grep t))
 
 (use-package rainbow-mode
   :hook prog-mode
-  :config
-  (setq rainbow-x-colors nil))
+  :custom
+  (rainbow-x-colors nil))
 
 (use-package rainbow-delimiters
   :hook ((haskell-mode lisp-data-mode) . rainbow-delimiters-mode)
