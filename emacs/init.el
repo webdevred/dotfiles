@@ -76,12 +76,14 @@
            ((haskell-mode haskell-cabal-mode) . ("my-hls-wrapper"))
            ((yaml-mode) . ("yaml-language-server" "--stdio")))))
     (dolist (new my-eglot-server-programs)
-      (setq eglot-server-programs
-            (cl-remove-if (lambda (existing)
-                            (cl-find-if
-                             (lambda (new-name) (eq new-name (car existing))) (or (and (= 1 (length (car new))) (car new)) (list (car new)))))
-                          eglot-server-programs))
-      (add-to-list 'eglot-server-programs new)))
+      (let* ((new-modes (if (listp (car new)) (car new) (list (car new)))))
+        (setq eglot-server-programs
+              (cl-remove-if
+               (lambda (existing)
+                 (let ((existing-modes (if (listp (car existing)) (car existing) (list (car existing)))))
+                   (cl-some (lambda (mode) (memq mode existing-modes)) new-modes)))
+               eglot-server-programs))
+        (push new eglot-server-programs))))
   (advice-add
    'eglot--format-markup :around
    (lambda (orig-fun &rest args)
