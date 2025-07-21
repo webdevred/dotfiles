@@ -58,6 +58,14 @@
     (message "[Eglot] Disabling eglot-managed-mode for: %s" buffer-file-name)
     (eglot--managed-mode-off)))
 
+(defun my-markup-formatter (orig-fun &rest args)
+  "Enable math rendering and replace carriage returns with newlines"
+  (let ((markdown-enable-math t))
+    (let* ((raw (apply orig-fun args))
+           (normalized (string-replace "\r\n" "\n" raw))
+           (final (string-replace "\r" "\n" normalized)))
+      final)))
+
 (use-package eglot
   :hook (((c-mode c++-mode haskell-mode haskell-cabal-mode) . eglot-ensure)
          (eglot-managed-mode . eglot-unmanage-buffer))
@@ -84,11 +92,7 @@
                    (cl-some (lambda (mode) (memq mode existing-modes)) new-modes)))
                eglot-server-programs))
         (push new eglot-server-programs))))
-  (advice-add
-   'eglot--format-markup :around
-   (lambda (orig-fun &rest args)
-     (let ((markdown-enable-math 1))
-       (apply orig-fun args))))
+  (advice-add 'eglot--format-markup :around #'my-markup-formatter)
   (setq-default eglot-workspace-configuration
                 '((haskell (formattingProvider . "fourmolu")
                            (plugin (fourmolu (config (external . t)))))
@@ -97,7 +101,6 @@
                    (completion . t)
                    (hover . t))))
   :bind (:map eglot-mode-map
-              ("C-c C-d" . eldoc-doc-buffer)
               ("C-c a" . eglot-code-actions)
               ("M-."   . xref-find-definitions)
               ("M-,"   . xref-pop-marker-stack)))
