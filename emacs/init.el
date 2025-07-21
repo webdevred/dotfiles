@@ -89,7 +89,11 @@
        (apply orig-fun args))))
   (setq-default eglot-workspace-configuration
                 '((haskell (formattingProvider . "fourmolu")
-                           (plugin (fourmolu (config (external . t)))))))
+                           (plugin (fourmolu (config (external . t)))))
+                  (yaml
+                   (schemas . ((https://www.schemastore.org/clang-format.json . "/.clang-format")))
+                   (completion . t)
+                   (hover . t))))
   :bind (:map eglot-mode-map
               ("C-c C-d" . eldoc-doc-buffer)
               ("C-c a" . eglot-code-actions)
@@ -196,6 +200,7 @@
 (use-package yaml-mode
   :hook (yaml-mode . my-yaml-eglot-setup)
   :mode (("\\.ya?ml\\'" . yaml-mode)
+         ("/\\.clang-format\\'" . yaml-mode)
          ("/stack\\.yaml\\.lock\\'" . yaml-mode)))
 
 (use-package vimrc-mode)
