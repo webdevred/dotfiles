@@ -37,8 +37,40 @@
   :config
   (editorconfig-mode 1))
 
+(defun magit-dont-force-push-to-wrong (orig-fun &rest args)
+  (let ((cmd (car args)))
+    (if (not (equal cmd "push"))
+        (apply orig-fun args)
+      (let ((is-force
+             (seq-some (lambda (x)
+                         (and (listp x)
+                              (or (member "--force-with-lease" x)
+                                  (member "--force" x))))
+                       args))
+            (push-spec nil))
+        (cl-loop for x in args
+                 when (and (stringp x)
+                           (string-match "\\`\\([^:]+\\):\\([^:]+\\)\\'" x))
+                 do (progn (setq push-spec x)
+                           (cl-return push-spec)))
+        (if (and is-force push-spec)
+            (let* ((src (match-string 1 push-spec))
+                   (dst (match-string 2 push-spec))
+                   (normalize (lambda (branch)
+                                (replace-regexp-in-string
+                                 "\\`refs/heads/" "" branch)))
+                   (src-norm (funcall normalize src))
+                   (dst-norm (funcall normalize dst)))
+              (if (not (string= src-norm dst-norm))
+                  (message "Refusing to force-push from %s to different remote branch %s"
+                           src dst)
+                (apply orig-fun args)))
+          (apply orig-fun args))))))
+
 (use-package magit
-  :commands (magit-status magit-blame magit-log))
+  :commands (magit-status magit-blame magit-log)
+  :config
+  (advice-add 'magit-run-git-async :around #'magit-dont-force-push-to-wrong))
 
 (use-package git-modes)
 
