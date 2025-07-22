@@ -72,6 +72,13 @@
   :config
   (advice-add 'magit-run-git-async :around #'magit-dont-force-push-to-wrong))
 
+(use-package magit-todos
+  :after magit
+  :hook (haskell-mode . magit-todos-mode))
+
+(use-package treemacs-magit
+  :after treemacs magit)
+
 (use-package git-modes)
 
 (use-package undo-tree
