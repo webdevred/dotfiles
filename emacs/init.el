@@ -109,6 +109,7 @@
 
 (use-package eglot
   :hook (((c-mode c++-mode haskell-mode haskell-cabal-mode) . eglot-ensure)
+         (sh-mode . my-eglot-ensure-if-supported)
          (eglot-managed-mode . eglot-unmanage-buffer))
   :custom
   (eglot-events-buffer-config '(:format lisp))
@@ -123,7 +124,7 @@
   (let ((my-eglot-server-programs
          '(((c-mode c++-mode) . ("clangd"))
            ((haskell-mode haskell-cabal-mode) . ("my-hls-wrapper"))
-           ((yaml-mode) . ("yaml-language-server" "--stdio")))))
+           (fish-mode . ("fish-lsp" "start")))))
     (dolist (new my-eglot-server-programs)
       (let* ((new-modes (if (listp (car new)) (car new) (list (car new)))))
         (setq eglot-server-programs
@@ -262,6 +263,7 @@
   :mode ("\\.md\\'" . markdown-mode))
 
 (use-package fish-mode
+  :hook (fish-mode . my-eglot-ensure-if-supported)
   :mode ("\\.fish\\'" . fish-mode))
 
 (use-package php-mode)
