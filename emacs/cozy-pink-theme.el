@@ -26,17 +26,6 @@
    `(cursor ((,class (:foreground ,pink :background ,gray))))
    `(region ((,class (:background ,gray))))
    )
-
-  (if (facep 'treemacs-root-face)
-    (custom-theme-set-faces
-     'cozy-pink
-     `(treemacs-root-face ((,class (:foreground ,pink)))))
-    )
-  (if (facep 'which-func)
-    (custom-theme-set-faces
-     'cozy-pink
-     `(which-func ((,class (:foreground ,black)))))
-    )
   )
 
 (provide-theme 'cozy-pink)

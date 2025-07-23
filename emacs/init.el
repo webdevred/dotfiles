@@ -170,6 +170,8 @@
   (treemacs-no-png-images t)
   :config
   (add-to-list 'treemacs-ignored-file-predicates #'treemacs-hide-boring-files)
+  (custom-set-faces
+   '(treemacs-root-face ((t (:foreground "#ffaaff")))))
   :bind
   (:map global-map
         ("M-0"       . treemacs-select-window)
@@ -260,7 +262,11 @@
 
 (use-package markdown-mode
   :hook (markdown-mode . my-eglot-ensure-if-supported)
-  :mode ("\\.md\\'" . markdown-mode))
+  :mode ("\\.md\\'" . markdown-mode)
+  :config
+  (custom-set-faces
+   '(markdown-metadata-key-face ((t (:foreground "#ff55ff"))))
+   '(markdown-metadata-value-face ((t (:foreground "#ff55ff"))))))
 
 (use-package fish-mode
   :hook (fish-mode . my-eglot-ensure-if-supported)
