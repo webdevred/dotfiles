@@ -17,6 +17,8 @@
    `(mode-line ((,class (:foreground ,black :background ,pink))))
    `(mode-line-inactive ((,class (:foreground ,black :background ,purple))))
 
+   `(flymake-error-echo ((,class (:foreground "#8B0000"))))
+   `(flymake-warning-echo ((,class (:foreground "#32CD32"))))
    `(line-number ((,class (:foreground ,pink))))
    `(match ((,class (:background ,gray))))
    `(isearch ((,class (:foreground ,purple :background ,gray))))
