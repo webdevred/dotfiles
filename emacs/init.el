@@ -69,6 +69,8 @@
 
 (use-package magit
   :commands (magit-status magit-blame magit-log)
+  :custom
+  (magit-completing-read-function #'ido-completing-read)
   :config
   (advice-add 'magit-run-git-async :around #'magit-dont-force-push-to-wrong))
 
