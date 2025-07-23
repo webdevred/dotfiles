@@ -231,7 +231,34 @@
 ;;     (haskell-doc-prettify-types t))
 ;;   :diminish 'haskell-doc-mode)
 
+(defun my-eglot-ensure-if-supported ()
+  "Start eglot if current major mode is supported and the language server executable is found."
+  (message "[eglot-debug] Running in mode: %s" major-mode)
+  (unless (featurep 'eglot)
+    (require 'eglot))
+  (when-let ((server-entry
+              (cl-find-if
+               (lambda (entry)
+                 (let ((modes (if (listp (car entry)) (car entry) (list (car entry)))))
+                   (memq major-mode modes)))
+               eglot-server-programs)))
+    (let* ((server-cmd (cdr server-entry))
+           (cmd (if (functionp server-cmd)
+                    (funcall server-cmd nil)
+                  server-cmd))
+           (executable
+            (if (and (listp cmd)
+                     (stringp (car cmd)))
+                (car cmd))))
+      (if (and executable (executable-find executable))
+          (progn
+            (message "[eglot-debug] Found executable '%s', starting eglot" executable)
+            (eglot-ensure))
+        (message "[eglot-debug] Executable '%s' not found, not starting eglot" executable)))))
+
+
 (use-package markdown-mode
+  :hook (markdown-mode . my-eglot-ensure-if-supported)
   :mode ("\\.md\\'" . markdown-mode))
 
 (use-package fish-mode
@@ -239,12 +266,8 @@
 
 (use-package php-mode)
 
-(defun my-yaml-eglot-setup ()
-  (when (executable-find "yaml-language-server")
-    (eglot-ensure)))
-
 (use-package yaml-mode
-  :hook (yaml-mode . my-yaml-eglot-setup)
+  :hook (yaml-mode . my-eglot-ensure-if-supported)
   :mode (("\\.ya?ml\\'" . yaml-mode)
          ("/\\.clang-format\\'" . yaml-mode)
          ("/stack\\.yaml\\.lock\\'" . yaml-mode)))
