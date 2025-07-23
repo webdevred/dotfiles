@@ -184,7 +184,7 @@
   (projectile-use-git-grep t))
 
 (use-package rainbow-mode
-  :hook prog-mode
+  :hook (prog-mode . rainbow-mode)
   :custom
   (rainbow-x-colors nil))
 
