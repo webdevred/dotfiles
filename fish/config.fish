@@ -11,6 +11,7 @@ set -U fish_user_paths ~/.local/bin $fish_user_paths
 
 if status is-interactive
     # Commands to run in interactive sessions can go here
+    stack --fish-completion-script (which stack) >/dev/null
 end
 
 function df
