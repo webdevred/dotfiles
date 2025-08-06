@@ -147,6 +147,17 @@
               ("M-."   . xref-find-definitions)
               ("M-,"   . xref-pop-marker-stack)))
 
+(use-package realgud
+  :config
+  (defun my-realgud-gdb-wrapper ()
+    (interactive)
+    (realgud:gdb "gdb"))
+  :hook ((c-mode c++-mode) . (lambda () (require 'realgud)))
+  :bind ( (:map c-mode-map
+                ("C-c g" . #'my-realgud-gdb-wrapper))
+          (:map c++-mode-map
+                ("C-c g" . #'my-realgud-gdb-wrapper))))
+
 (use-package corfu
   :hook ((prog-mode . corfu-mode)
          (text-mode . corfu-mode))
