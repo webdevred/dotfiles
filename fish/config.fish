@@ -30,19 +30,6 @@ function fish_title
     printf "terminal: %s" (pwd)
 end
 
-function hpack_and_format
-    hpack -f --canonical >/dev/null
-    set hpack_status $status
-
-    if test $hpack_status -ne 0
-        return $hpack_status
-    end
-
-    set cabal_file (hpack -f --canonical | awk '{ print $2 }')
-    command cabal format "$cabal_file"
-    printf "generated and formatted %s\n" "$cabal_file"
-end
-
 function cabal_gild_all
     set files (find . -name 'cabal.project.*')
     for file in $files
