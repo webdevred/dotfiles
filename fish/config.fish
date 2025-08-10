@@ -14,6 +14,10 @@ if status is-interactive
     stack --fish-completion-script (which stack) >/dev/null
 end
 
+function ncdu
+    command ncdu -x $argv
+end
+
 function df
     command df -x efivarfs -x tmpfs -x zfs -hT $argv
 end
