@@ -49,15 +49,18 @@ function cabal
     if test (count $argv) -ge 1
         if contains -- $argv[1] $build_commands
             printf "fish: building with --jobs=%s\n" $max_jobs
+            set argv $argv "--jobs=$max_jobs"
+            if test -f "cabal.project.dev"
+                set argv $argv "--project-file=cabal.project.dev"
+            end
             if test $argv[1] = install
-                set -l extra_flags \
+                set  argv $argv \
                     --overwrite-policy=always \
                     --upgrade-dependencies \
                     --installdir=$HOME/.local/bin
-                command cabal install --jobs=$max_jobs $extra_flags $argv[2..-1]
-            else
-                command cabal $argv[1] --jobs=$max_jobs $argv[2..-1]
             end
+            printf "fish: passing extra arguments to cabal:\n  %s\n\n" "$argv[2..-1]"
+            command cabal $argv[1] $argv[2..-1]
         else
             command cabal $argv
         end
