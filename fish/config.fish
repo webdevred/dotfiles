@@ -38,37 +38,6 @@ function cabal_gild_all
     end
 end
 
-function cabal
-    set -l max_jobs (math (nproc) - 2)
-    if test $max_jobs -lt 1
-        set max_jobs 1
-    end
-
-    set -l build_commands build install rebuild repl
-
-    if test (count $argv) -ge 1
-        if contains -- $argv[1] $build_commands
-            printf "fish: building with --jobs=%s\n" $max_jobs
-            set argv $argv "--jobs=$max_jobs"
-            if test -f "cabal.project.dev"
-                set argv $argv "--project-file=cabal.project.dev"
-            end
-            if test $argv[1] = install
-                set  argv $argv \
-                    --overwrite-policy=always \
-                    --upgrade-dependencies \
-                    --installdir=$HOME/.local/bin
-            end
-            printf "fish: passing extra arguments to cabal:\n  %s\n\n" "$argv[2..-1]"
-            command cabal $argv[1] $argv[2..-1]
-        else
-            command cabal $argv
-        end
-    else
-        command cabal
-    end
-end
-
 function fish_prompt
     if not set -q VIRTUAL_ENV_DISABLE_PROMPT
         set -g VIRTUAL_ENV_DISABLE_PROMPT true

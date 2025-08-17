@@ -19,6 +19,7 @@ misc/gdbinit:.config/gdb/gdbinit
 # haskell development
 haskell/ghci_config:.ghci::700
 haskell/my-hls-wrapper.sh:.local/bin/my-hls-wrapper::700
+haskell/cabal_wrapper.sh:.local/bin/cabal::700
 haskell/hpack-and-format.sh:.local/bin/hpack-and-format::700
 
 # misc
