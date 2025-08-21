@@ -27,14 +27,17 @@ else
   echo "Warning: hspec-discover not found for GHC $ghc_version. Continuing without it." >&2
 fi
 
-echo "PATH is now: $PATH" >&2
+hls_bin="$(which haskell-language-server)"
 
-if command -v haskell-language-server >/dev/null 2>&1; then
+echo "PATH is now: $PATH" >&2
+export MY_HLS_WRAPPER=1
+
+if ! [[ -z $hls_bin ]]; then
   if [ -t 0 ]; then
-    haskell-language-server -d >lsp_log 2>&1
+    "$hls_bin" -d >lsp_log 2>&1
     echo "Saved errors lsp_log" >&2
   else
-    exec haskell-language-server --lsp
+    exec "$hls_bin" --lsp
   fi
 else
   echo "Error: haskell-language-server not found in PATH." >&2
