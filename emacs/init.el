@@ -123,7 +123,7 @@
   :config
   (let ((my-eglot-server-programs
          '(((c-mode c++-mode) . ("clangd"))
-           ((haskell-mode haskell-cabal-mode) . ("my-hls-wrapper"))
+           ((haskell-mode haskell-cabal-mode) . ("my_hls_wrapper"))
            (fish-mode . ("fish-lsp" "start")))))
     (dolist (new my-eglot-server-programs)
       (let* ((new-modes (if (listp (car new)) (car new) (list (car new)))))
