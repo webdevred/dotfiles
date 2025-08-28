@@ -12,18 +12,19 @@ for p in "${_parts[@]}"; do
   fi
 done
 
-given_command="$1"
+given_command="${1:-}"
 is_interactive=false
 if [[ -n "$given_command" && "repl" == "$given_command" ]]; then
   is_interactive=true
 fi
 
-real_cabal="$(PATH="$new_path" command -v cabal || true)"
+real_cabal="$(PATH="$HOME/.ghcup/bin:$new_path" command -v cabal || true)"
 if [[ -z "$real_cabal" ]]; then
   echo "wrapper: couldnt find the real 'cabal' in PATH." >&2
   exit 2
 fi
 
+export PATH="$PATH:$HOME/.ghcup/bin"
 if [[ -n "${CABAL_WRAPPER:-}" ]] || [[ -n "${MY_HLS_WRAPPER:-}" ]]; then
   exec "$real_cabal" "$@"
 fi
@@ -31,7 +32,7 @@ fi
 max_jobs=$(($(nproc) - 2))
 ((max_jobs < 1)) && max_jobs=1
 
-build_commands=" build install rebuild repl "
+build_commands=" build install rebuild repl v2-repl test "
 given_command="${1:-}"
 
 if [[ "$build_commands" == *" $given_command "* ]]; then
@@ -41,11 +42,12 @@ if [[ "$build_commands" == *" $given_command "* ]]; then
   if [[ -f "cabal.project.dev" ]]; then
     extra_args+=("--project-file=cabal.project.dev")
   fi
-
   if [[ "$given_command" == "install" ]]; then
     extra_args+=("--overwrite-policy=always" "--installdir=$HOME/.local/bin")
   fi
-  printf "wrapper: passing extra arguments to cabal:\n  %s\n\n" "${extra_args[*]}"
+  printf "wrapper: passing extra arguments to cabal:\n "
+  printf "%s " "${@:2}" "${extra_args[@]}"
+  printf "\n\n"
 fi
 
 if $is_interactive; then

@@ -32,7 +32,7 @@ hls_bin="$(which haskell-language-server)"
 echo "PATH is now: $PATH" >&2
 export MY_HLS_WRAPPER=1
 
-if ! [[ -z $hls_bin ]]; then
+if [[ -n $hls_bin ]]; then
   if [ -t 0 ]; then
     "$hls_bin" -d >lsp_log 2>&1
     echo "Saved errors lsp_log" >&2
