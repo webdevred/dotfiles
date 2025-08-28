@@ -31,7 +31,7 @@ function fish_title
 end
 
 function cabal_gild_all
-    set files (find . -name 'cabal.project.*')
+    set files (find . -name 'cabal.project.*' -o -name 'cabal.project')
     for file in $files
         printf "formatting %s\n" $file
         command cabal-gild --io $file

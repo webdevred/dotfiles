@@ -1,3 +1,5 @@
+#!/bin/bash
+
 if ! hpack -f --canonical >/dev/null; then
   echo "Problem with hpack"
   exit 1
