@@ -16,6 +16,7 @@ import Data.Hashable
 import Data.Int (Int32)
 import Data.List (find, isPrefixOf, sortOn)
 import Data.Map (Map)
+import Data.Maybe (fromMaybe)
 import Data.Ord (Down (..))
 import Data.String (fromString)
 import Data.Text (Text)
@@ -315,20 +316,11 @@ audioGridColorizer activeSink mutedSinks this hovering
     isSinkActive = (sink_name <$> activeSink) == Just this
     isSinkMuted = any (\sink -> sink_name sink == this) mutedSinks
 
-decodeContent :: ByteString -> Map SinkName Int
-decodeContent str =
-  case decode str of
-    Just str' -> str'
-    Nothing ->
-      withFrozenCallStack $ error ("can not decode \"" ++ faultyData ++ "\"")
-  where
-    faultyData = TL.unpack . TL.strip . TLE.decodeUtf8 $ str
-
 getAudioSinkMetrics :: String -> IO (Map SinkName Int)
 getAudioSinkMetrics filename = do
   content <- tryReadFile
   case content of
-    Right content' -> pure . decodeContent $ content'
+    Right content' -> pure $ fromMaybe Map.empty (decode content')
     Left _ -> pure Map.empty
   where
     tryReadFile :: IO (Either IOException ByteString)
