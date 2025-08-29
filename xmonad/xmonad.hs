@@ -346,11 +346,22 @@ sortingFun :: Map SinkName Int -> AudioSink -> Down (Maybe Int)
 sortingFun audioSinkMetrics' sink =
   Down $ Map.lookup (sink_name sink) audioSinkMetrics'
 
+sortSinksByMetrics
+  :: String -> [AudioSink] -> IO (Map SinkName Int, [AudioSink])
+sortSinksByMetrics filename sinks = do
+  metrics <- getAudioSinkMetrics filename
+  if Map.null metrics
+    then
+      pure (Map.empty, sinks)
+    else
+      pure (metrics, sortOn (sortingFun metrics) sinks)
+
 doAudioGridSelect :: String -> [AudioSink] -> X ()
 doAudioGridSelect configLocation sinks = do
-  audioSinkMetrics <- liftIO $ getAudioSinkMetrics filename
+  (metrics, sinks') <- liftIO (sortSinksByMetrics filename sinks)
   let mutedSinks = filter sink_mute sinks
       activeSink = find sink_active sinks
+      sinksTuples = map sinkToTuple (activeSinkNotHead sinks')
       gridConfig =
         def
           { gs_navigate = myGridNavigation
@@ -358,15 +369,11 @@ doAudioGridSelect configLocation sinks = do
           , gs_colorizer = audioGridColorizer activeSink mutedSinks
           , gs_bordercolor = white
           }
-      prepareSinks =
-        map sinkToTuple
-          . activeSinkNotHead
-          . sortOn (sortingFun audioSinkMetrics)
-  sinkMaybe <- gridselect gridConfig $ prepareSinks sinks
+  sinkMaybe <- gridselect gridConfig sinksTuples
   case sinkMaybe of
     Just sink -> do
       liftIO $
-        BL.writeFile filename (encode $ incrementKey sink audioSinkMetrics)
+        BL.writeFile filename (encode $ incrementKey sink metrics)
       spawn $ "pactl set-default-sink " ++ T.unpack sink
     Nothing -> pure ()
   where
