@@ -14,8 +14,13 @@
 
    `(default ((,class (:foreground ,pink :background ,black))))
 
+   `(minibuffer-prompt ((,class (:foreground ,purple))))
+   `(hl-line ((,class (:foreground ,"#0000ff", :background ,purple :weight bold))))
    `(mode-line ((,class (:foreground ,black :background ,pink))))
    `(mode-line-inactive ((,class (:foreground ,black :background ,purple))))
+
+   `(font-lock-type-face ((,class (:foreground ,purple))))
+   `(font-lock-variable-name-face ((,class (:foreground ,pink))))
 
    `(flymake-error-echo ((,class (:foreground "#8B0000"))))
    `(flymake-warning-echo ((,class (:foreground "#32CD32"))))

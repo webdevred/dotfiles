@@ -187,6 +187,7 @@
   (add-to-list 'treemacs-ignored-file-predicates #'treemacs-hide-boring-files)
   :custom-face
   (treemacs-root-face ((t (:foreground "#ffaaff"))))
+  (treemacs-directory-face ((t (:foreground "#ff55ff"))))
   :bind
   (:map global-map
         ("M-0"       . treemacs-select-window)
