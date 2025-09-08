@@ -92,7 +92,10 @@
   :hook ((prog-mode . undo-tree-mode)
          (text-mode . undo-tree-mode))
   :custom
-  (undo-tree-auto-save-history t))
+  (undo-tree-visualizer-diff t)
+  (undo-tree-visualizer-lazy-drawing t)
+  (undo-tree-auto-save-history t)
+  (undo-tree-save-history t))
 
 (defun eglot-unmanage-buffer ()
   "Force Eglot to stop managing this buffer if it's on the denylist."
