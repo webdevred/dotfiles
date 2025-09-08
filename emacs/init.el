@@ -72,7 +72,11 @@
   :custom
   (magit-completing-read-function #'ido-completing-read)
   :config
-  (advice-add 'magit-run-git-async :around #'magit-dont-force-push-to-wrong))
+  (advice-add 'magit-run-git-async :around #'magit-dont-force-push-to-wrong)
+  :custom-face
+  (magit-section-heading ((t (:foreground "#ff55ff"))))
+  (magit-log-author ((t (:foreground "#ff55ff")))))
+
 
 (use-package magit-todos
   :after magit
