@@ -2,27 +2,9 @@
 (require 'haskell-mode-autoloads)
 (add-to-list 'Info-default-directory-list "~/.config/emacs/opt/haskell-mode")
 
-(defun haskell-run-hlint ()
-  (interactive)
-  (let ((default-directory (projectile-project-root)))
-    (compile "hlint .")))
-
-(defun compile-with-haskell-process-type (fun)
-  (let ((stack-or-cabal (haskell-process-type))
-        (compilation-environment '("TERM=xterm-256color"))
-        (default-directory (projectile-project-root)))
-    (if (eq stack-or-cabal 'ghci)
-        (message "no project directory found")
-      (compile (funcall fun stack-or-cabal)))))
-
-(defun haskell-run-tests ()
-  (interactive)
-  (compile-with-haskell-process-type
-   (lambda (process-type)
-     (if (eq process-type 'stack-ghci)
-         "stack test --color always"
-       "cabal test --test-show-details=direct"))))
-
+;; ----------------
+;; some settings
+;; ----------------
 (defun my-haskell-mode-setup ()
   (haskell-collapse-mode 1)
   (haskell-doc-mode 1)
@@ -107,6 +89,10 @@ an extra argument to `haskell-process-args-cabal-repl' dynamically."
 
 (advice-add 'haskell-process-compute-process-log-and-command :around
             #'my-haskell-add-cabal-target-arg)
+
+;; ----------------
+;; apply my .dir-locals.el after switching to a haskell buffer
+;; ----------------
 (defvar my-haskell-dir-locals-last-dir nil
   "Holds the last directory for which Haskell dir-locals were applied for the current buffer.")
 
@@ -129,6 +115,9 @@ an extra argument to `haskell-process-args-cabal-repl' dynamically."
 
 (add-hook 'buffer-list-update-hook #'my-haskell-apply-dir-locals)
 
+;; ----------------
+;; validate that the cabal args are safe
+;; ----------------
 (add-to-list 'safe-local-variable-values '(haskell-process-type . cabal-repl))
 (defun cabal-args-are-safe (val)
   (and (listp val)
@@ -159,9 +148,30 @@ an extra argument to `haskell-process-args-cabal-repl' dynamically."
 
 (put 'eval 'safe-local-variable #'cabal-args-are-safe)
 
-(with-eval-after-load 'diminish
-  (dolist (mode '(haskell-collapse-mode haskell-doc-mode haskell-indent-mode interactive-haskell-mode))
-    (diminish mode)))
+;; ----------------
+;; run hlint and tests in compilation buffer
+;; ----------------
+(defun haskell-run-hlint ()
+  (interactive)
+  (let ((default-directory (projectile-project-root)))
+    (compile "hlint -s .")))
+
+(defun compile-with-haskell-process-type (fun)
+  (let ((stack-or-cabal (haskell-process-type))
+        (compilation-environment '("TERM=xterm-256color"))
+        (default-directory (projectile-project-root)))
+    (if (eq stack-or-cabal 'ghci)
+        (message "no project directory found")
+      (compile (funcall fun stack-or-cabal)))))
+
+(defun haskell-run-tests ()
+  (interactive)
+  (compile-with-haskell-process-type
+   (lambda (process-type)
+     (if (eq process-type 'stack-ghci)
+         "stack test --color always"
+       "cabal test --test-show-details=direct"))))
+
 
 (with-eval-after-load 'haskell-mode
   (define-key haskell-mode-map (kbd "C-c l") #'haskell-run-hlint)
@@ -172,3 +182,10 @@ an extra argument to `haskell-process-args-cabal-repl' dynamically."
       haskell-process-show-debug-tips t
       haskell-doc-prettify-types t
       haskell-indentation-electric-flag t)
+
+;; ----------------
+;; annoying minor mode modelines
+;; ----------------
+(with-eval-after-load 'diminish
+  (dolist (mode '(haskell-collapse-mode haskell-doc-mode haskell-indent-mode interactive-haskell-mode))
+    (diminish mode)))
