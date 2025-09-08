@@ -32,6 +32,28 @@
 
 (add-hook 'haskell-mode-hook #'my-haskell-mode-setup)
 
+(defvar my-haskell-dir-locals-last-dir nil
+  "Holds the last directory for which Haskell dir-locals were applied for the current buffer.")
+
+(defun my-haskell-apply-dir-locals ()
+  "Apply .dir-locals.el automatically for Haskell buffers when switching buffers."
+  (when (and buffer-file-name
+             (string-match-p "\\.hs\\'" buffer-file-name)
+             (not (minibufferp)))
+    (let ((current-dir (file-name-directory buffer-file-name)))
+      (unless (equal current-dir my-haskell-dir-locals-last-dir)
+        (unless (bound-and-true-p my-haskell-applying-dir-locals)
+          (let ((my-haskell-applying-dir-locals t))
+            (require 'haskell-mode)
+            (unless (derived-mode-p 'haskell-mode)
+              (haskell-mode))
+            (hack-local-variables t)
+            (when (and (bound-and-true-p my-haskell-dir-locals-last-dir) (haskell-session-maybe) (fboundp 'haskell-process-restart))
+              (haskell-process-restart))
+            (setq my-haskell-dir-locals-last-dir current-dir)))))))
+
+(add-hook 'buffer-list-update-hook #'my-haskell-apply-dir-locals)
+
 (add-to-list 'safe-local-variable-values '(haskell-process-type . cabal-repl))
 (defun cabal-args-are-safe (val)
   (and (listp val)
