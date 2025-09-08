@@ -151,6 +151,7 @@
                    (hover . t))))
   :bind (:map eglot-mode-map
               ("C-c a" . eglot-code-actions)
+              ("C-c f" . eglot-format-buffer)
               ("M-."   . xref-find-definitions)
               ("M-,"   . xref-pop-marker-stack)))
 
