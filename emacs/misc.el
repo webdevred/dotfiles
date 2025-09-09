@@ -56,11 +56,6 @@
           (elisp-koans/run-test (get-test-name test-def))))
     (princ "You are not in the elisp-koans repo")))
 
-(define-derived-mode jbeam-mode js-mode "Jbeam"
-  "Major mode for Jbeam files.")
-
-(add-to-list 'auto-mode-alist '("\\.jbeam\\'" . jbeam-mode))
-
 (defun set-mode-for-backupish-files ()
   (when (and buffer-file-name
              (string-match "\\(.*\\)~[^/]*\\'" buffer-file-name))
@@ -121,6 +116,25 @@
   (let* ((pkg-desc (cadr (assq package package-alist)))
          (dir (package-desc-dir pkg-desc)))
     (file-in-directory-p dir package-user-dir)))
+
+(defun my-jbeam-try-load-mode (mode)
+  "Load MODE jbeam modes if we are in jbeam-edit project."
+  (let* ((project-root (ignore-errors (projectile-project-root)))
+         (project-name (and project-root (projectile-project-name)))
+         (elisp-dir (and project-root (concat project-root "/editors"))))
+    (if (and (string= project-name "jbeam-edit")
+             elisp-dir
+             (file-directory-p elisp-dir))
+        (progn
+          (add-to-list 'load-path elisp-dir)
+          (require mode)
+          (funcall mode))
+      (fundamental-mode))))
+
+(add-to-list 'auto-mode-alist
+             '("\\.jbfl\\'" . (lambda () (my-jbeam-try-load-mode 'jbfl-mode))))
+(add-to-list 'auto-mode-alist
+             '("\\.jbeam\\'" . (lambda () (my-jbeam-try-load-mode 'jbeam-mode))))
 
 ; remove ugly bars
 (menu-bar-mode -1)

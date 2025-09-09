@@ -75,21 +75,6 @@ COMPONENT is a string like 'library' or 'executable foo'."
                      (t nil))))))
         result))))
 
-(defun my-haskell-add-cabal-target-arg (orig-fun session hptype)
-  "Advice around `haskell-process-compute-process-log-and-command' to add
-an extra argument to `haskell-process-args-cabal-repl' dynamically."
-  (if (eq hptype 'cabal-repl)
-      (let* ((target (get-cabal-target-for-buffer))
-             (haskell-process-args-cabal-repl
-              (if target
-                  (cons target haskell-process-args-cabal-repl)
-                haskell-process-args-cabal-repl)))
-        (funcall orig-fun session hptype))
-    (funcall orig-fun session hptype)))
-
-(advice-add 'haskell-process-compute-process-log-and-command :around
-            #'my-haskell-add-cabal-target-arg)
-
 ;; ----------------
 ;; apply my .dir-locals.el after switching to a haskell buffer
 ;; ----------------
@@ -109,7 +94,10 @@ an extra argument to `haskell-process-args-cabal-repl' dynamically."
             (unless (derived-mode-p 'haskell-mode)
               (haskell-mode))
             (hack-local-variables t)
-            (when (and (bound-and-true-p my-haskell-dir-locals-last-dir) (haskell-session-maybe) (fboundp 'haskell-process-restart))
+            (unless (cl-some (lambda (arg) (string-match-p "\\[a-z-]+:" arg)) haskell-process-args-cabal-repl)
+              (setq-local haskell-process-args-cabal-repl (cons (get-cabal-target-for-buffer) haskell-process-args-cabal-repl)))
+            (message "cabal repl args: %S" haskell-process-args-cabal-repl)
+            (when (and (bound-and-true-p my-haskell-dir-locals-last-dir) (or (haskell-session-maybe) (haskell-session-from-buffer)) (fboundp 'haskell-process-restart))
               (haskell-process-restart))
             (setq my-haskell-dir-locals-last-dir current-dir)))))))
 
