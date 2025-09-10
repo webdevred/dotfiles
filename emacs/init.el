@@ -95,7 +95,11 @@
   (undo-tree-visualizer-diff t)
   (undo-tree-visualizer-lazy-drawing t)
   (undo-tree-auto-save-history t)
-  (undo-tree-save-history t))
+  :config
+  (setq undo-tree-history-directory-alist
+        `(("." . ,(expand-file-name "undo-tree-history" user-emacs-directory))))
+  (unless (file-directory-p (expand-file-name "undo-tree-history" user-emacs-directory))
+    (make-directory (expand-file-name "undo-tree-history" user-emacs-directory) t)))
 
 (defun eglot-unmanage-buffer ()
   "Force Eglot to stop managing this buffer if it's on the denylist."
@@ -191,7 +195,7 @@
   (add-to-list 'treemacs-ignored-file-predicates #'treemacs-hide-boring-files)
   :custom-face
   (treemacs-root-face ((t (:foreground "#ffaaff"))))
-  (treemacs-directory-face ((t (:foreground "#ff55ff"))))
+  (treemacs-directory-face ((t (:foreground "#4477dd"))))
   :bind
   (:map global-map
         ("M-0"       . treemacs-select-window)
