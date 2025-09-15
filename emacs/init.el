@@ -294,6 +294,11 @@
   :hook (fish-mode . my-eglot-ensure-if-supported)
   :mode ("\\.fish\\'" . fish-mode))
 
+(use-package dockerfile-mode)
+
+(use-package apache-mode
+  :mode (("/\\.htaccess\\'" . apache-mode)))
+
 (use-package php-mode)
 
 (use-package yaml-mode
