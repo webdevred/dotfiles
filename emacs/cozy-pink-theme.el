@@ -20,7 +20,7 @@
    `(mode-line-inactive ((,class (:foreground ,black :background ,purple))))
 
    `(font-lock-type-face ((,class (:foreground ,purple))))
-   `(font-lock-variable-name-face ((,class (:foreground ,pink))))
+   `(font-lock-variable-name-face ((,class (:foreground ,purple))))
 
    `(flymake-error-echo ((,class (:foreground "#8B0000"))))
    `(flymake-warning-echo ((,class (:foreground "#32CD32"))))
