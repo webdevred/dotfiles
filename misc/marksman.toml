@@ -1,0 +1,16 @@
+[core]
+markdown.file_extensions = ["md", "markdown"]
+markdown.glfm_heading_ids.enable = true
+text_sync = "full"
+title_from_heading = true
+incremental_references = true
+paranoid = false
+
+[code_action]
+toc.enable = true
+
+create_missing_file.enable = true
+
+[completion]
+candidates = 50
+wiki.style = "title-slug"

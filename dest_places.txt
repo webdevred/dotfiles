@@ -17,6 +17,8 @@ misc/vimrc:.vimrc
 misc/gdbinit:.config/gdb/gdbinit
 
 # haskell development
+misc/clangd.yaml:.config/marksman/clangd.yaml
+misc/marksman.toml:.config/marksman/marksman.toml
 haskell/ghci_config:.ghci::700
 haskell/my_hls_wrapper.sh:.local/bin/my_hls_wrapper::700
 haskell/cabal_wrapper.sh:.local/bin/cabal::700

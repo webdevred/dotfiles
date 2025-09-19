@@ -150,7 +150,8 @@
                 '((haskell (formattingProvider . "fourmolu")
                            (plugin (fourmolu (config (external . t)))))
                   (yaml
-                   (schemas . ((https://www.schemastore.org/clang-format.json . "/.clang-format")))
+                   (schemas . ((https://www.schemastore.org/clang-format.json . "/.clang-format")
+                               (https://www.schemastore.org/clangd.json . "/clangd.yaml")))
                    (completion . t)
                    (hover . t))))
   :bind (:map eglot-mode-map
@@ -285,7 +286,8 @@
 
 (use-package markdown-mode
   :hook (markdown-mode . my-eglot-ensure-if-supported)
-  :mode ("\\.md\\'" . markdown-mode)
+  :mode (("\\.md\\'" . markdown-mode)
+         ("\\.markdown\\'" . markdown-mode))
   :custom-face
   (markdown-metadata-key-face ((t (:foreground "#ff55ff"))))
   (markdown-metadata-value-face ((t (:foreground "#ffaaff")))))

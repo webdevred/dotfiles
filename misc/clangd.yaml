@@ -1,0 +1,4 @@
+Completion:
+  AllScopes: True
+  ArgumentLists: FullPlaceholders
+  HeaderInsertion: Never
