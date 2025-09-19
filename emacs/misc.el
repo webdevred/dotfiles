@@ -18,7 +18,8 @@
   ;; Removes whitespace at end of lines
  '(truncate-lines t)
  '(ring-bell-function #'ignore)
- '(warning-minimum-level :error))
+ '(warning-minimum-level :error)
+ '(require-final-newline t))
 
 (setq user-config-dir
   (expand-file-name (file-name-directory user-init-file)))
