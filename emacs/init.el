@@ -80,7 +80,9 @@
 
 (use-package magit-todos
   :after magit
-  :hook (haskell-mode . magit-todos-mode))
+  :hook (prog-mode . magit-todos-mode)
+  :config
+  (add-to-list 'magit-todos-exclude-globs "nob.h"))
 
 (use-package treemacs-magit
   :after treemacs magit)
