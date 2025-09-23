@@ -2,6 +2,7 @@
 
 # xmonad
 xmonad/xmonad.hs:.config/xmonad/xmonad.hs
+polybar/config.ini:.config/polybar/config.ini
 xmobar:.config/xmobar
 picom:.config/picom
 rofi:.config/rofi

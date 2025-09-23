@@ -50,36 +50,9 @@ import Data.Text.Lazy qualified as TL (strip, unpack)
 import Data.Text.Lazy.Encoding qualified as TLE (decodeUtf8)
 import XMonad.StackSet qualified as W
 
-type ConfigBar = (String, String)
-
-decodeBars :: ByteString -> Map String [String]
-decodeBars str =
-  case decode str of
-    Just str' -> str'
-    Nothing ->
-      withFrozenCallStack $ error ("can not decode \"" ++ faultyData ++ "\"")
-  where
-    faultyData = TL.unpack . TL.strip . TLE.decodeUtf8 $ str
-
-listConfigBars :: IO [ConfigBar]
-listConfigBars = do
-  path <- getXdgDirectory XdgConfig "xmonad"
-  content <- tryReadFile path
-  case content of
-    Right content' ->
-      pure . flattenConfigBars . Map.assocs . decodeBars $ content'
-    Left _ -> pure []
-  where
-    flattenConfigBars xs = [(a, b) | (a, bs) <- xs, b <- bs]
-    tryReadFile :: FilePath -> IO (Either IOException ByteString)
-    tryReadFile path = try . BL.readFile $ path ++ "/bars.json"
-
 -- main function
 main :: IO ()
-main = do
-  configBars <- listConfigBars
-  let myBars = foldMap xmobarStatusBar configBars
-   in xmonad . ewmhFullscreen . ewmh . docks . withSB myBars $ myConfig
+main = xmonad . ewmhFullscreen . ewmh . docks $ myConfig
 
 -- colors
 pink :: String
@@ -90,13 +63,6 @@ magenta = "#ff55ff"
 
 white :: String
 white = "#ffffff"
-
--- xmobar stuff
--- you need xmobar to be installed
-xmobarStatusBar :: ConfigBar -> StatusBarConfig
-xmobarStatusBar (screen, bar) = statusBarProp cmd $ pure myXmobarPP
-  where
-    cmd = "xmobar -x" ++ screen ++ " ~/.config/xmobar/" ++ bar
 
 untitledIfNull :: String -> String
 untitledIfNull v = bool v "untitled" $ null v
@@ -561,6 +527,7 @@ myLayouts =
 -- start picom with my config and set my background using wpc
 myStartup :: X ()
 myStartup = do
+  spawn "polybar top-big-screen"
   spawnOnce "xset s off; xset s noblank; xset -dpms"
   spawnOnce "picom"
   spawnOnce "wpc -b"
