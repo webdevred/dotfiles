@@ -16,6 +16,7 @@
 
    `(minibuffer-prompt ((,class (:foreground ,purple))))
    `(hl-line ((,class (:foreground ,"#0000ff", :background ,purple :weight bold))))
+   `(error ((,class (:foreground "#8B0000"))))
    `(mode-line ((,class (:foreground ,black :background ,pink))))
    `(mode-line-inactive ((,class (:foreground ,black :background ,purple))))
 

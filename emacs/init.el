@@ -243,6 +243,12 @@
   :config
   (ido-mode 1))
 
+(use-package flycheck
+  :hook ((emacs-lisp-mode-hook . flycheck-mode)))
+
+(use-package paredit
+  :hook ((prog-mode . paredit-mode)))
+
 ;; languages
 
 ;; some time I may use haskell from repo again but for now I will be compiling
