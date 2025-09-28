@@ -108,12 +108,14 @@
   (when (and buffer-file-name
              (not (string= "cabal.project.local" (file-name-nondirectory buffer-file-name)))
              (string-match-p "/cabal\\.project\\..*\\'" buffer-file-name)
+             (functionp 'eglot--managed-mode-off)
+             (functionp 'eglot-managed-p)
              (eglot-managed-p))
     (message "[Eglot] Disabling eglot-managed-mode for: %s" buffer-file-name)
     (eglot--managed-mode-off)))
 
 (defun my-markup-formatter (orig-fun &rest args)
-  "Enable math rendering and replace carriage returns with newlines"
+  "Enable math rendering and replace carriage returns with newlines."
   (let ((markdown-enable-math t))
     (let* ((raw (apply orig-fun args))
            (normalized (string-replace "\r\n" "\n" raw))
@@ -160,7 +162,7 @@
               ("C-c a" . eglot-code-actions)
               ("C-c f" . eglot-format-buffer)
               ("M-."   . xref-find-definitions)
-              ("M-,"   . xref-pop-marker-stack)))
+              ("M-,"   . xref-go-back)))
 
 (use-package realgud
   :config
@@ -184,7 +186,7 @@
   (corfu-quit-at-boundary nil))
 
 (define-inline treemacs-hide-boring-files (file _)
-  ""
+  "Check FILE is included in boring file list."
   (declare (side-effect-free t) (pure t))
   (inline-letevals (file)
     (inline-quote
@@ -247,7 +249,7 @@
   :hook ((emacs-lisp-mode-hook . flycheck-mode)))
 
 (use-package paredit
-  :hook ((prog-mode . paredit-mode)))
+    :hook ((emacs-lisp-mode-hook . paredit-mode)))
 
 ;; languages
 
@@ -324,7 +326,7 @@
 
 ;; load my other files
 (defun load-config-file (filename)
-  "load file name in this config"
+  "Load FILENAME in this config."
   (let ((filepath (concat (expand-file-name (file-name-directory user-init-file)) filename)))
     (load filepath)))
 
@@ -332,3 +334,6 @@
 (load-config-file "misc.el")
 
 (load-theme 'cozy-pink t)
+
+(provide 'init)
+;;; init.el ends here

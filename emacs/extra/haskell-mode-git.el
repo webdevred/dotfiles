@@ -1,3 +1,7 @@
+;;; package --- Summary: haskell mode configuration
+;;; Commentary:
+;;; Code:
+
 (add-to-list 'load-path "~/.config/emacs/opt/haskell-mode")
 (require 'haskell-mode-autoloads)
 (add-to-list 'Info-default-directory-list "~/.config/emacs/opt/haskell-mode")
@@ -108,6 +112,7 @@ COMPONENT is a string like 'library' or 'executable foo'."
 ;; ----------------
 (add-to-list 'safe-local-variable-values '(haskell-process-type . cabal-repl))
 (defun cabal-args-are-safe (val)
+  "Validate that VAL is validate cabal args list."
   (and (listp val)
        (= (length val) 3)
        (let ((func (car val))
@@ -140,11 +145,13 @@ COMPONENT is a string like 'library' or 'executable foo'."
 ;; run hlint and tests in compilation buffer
 ;; ----------------
 (defun haskell-run-hlint ()
+  "Run hlint."
   (interactive)
   (let ((default-directory (projectile-project-root)))
     (compile "hlint -s .")))
 
 (defun compile-with-haskell-process-type (fun)
+  "Call (FUN stack-or-cabal) and put result in comp buffer."
   (let ((stack-or-cabal (haskell-process-type))
         (compilation-environment '("TERM=xterm-256color"))
         (default-directory (projectile-project-root)))
@@ -153,6 +160,7 @@ COMPONENT is a string like 'library' or 'executable foo'."
       (compile (funcall fun stack-or-cabal)))))
 
 (defun haskell-run-tests ()
+  "Run test-suite."
   (interactive)
   (compile-with-haskell-process-type
    (lambda (process-type)
@@ -177,3 +185,4 @@ COMPONENT is a string like 'library' or 'executable foo'."
 (with-eval-after-load 'diminish
   (dolist (mode '(haskell-collapse-mode haskell-doc-mode haskell-indent-mode interactive-haskell-mode))
     (diminish mode)))
+;;; haskell-mode-git.el ends here

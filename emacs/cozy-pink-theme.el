@@ -36,3 +36,4 @@
 
 (provide-theme 'cozy-pink)
 (provide 'cozy-pink-theme)
+;;; cozy-pink-theme.el ends here
