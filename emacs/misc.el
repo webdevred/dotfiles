@@ -1,3 +1,7 @@
+;;; package --- Summary: misc file
+;;; Commentary:
+;;; Code:
+
 (custom-set-variables
  ;; set garbaǵe collection high to increase speed
  '(gc-cons-threshold 100000000)
@@ -15,17 +19,17 @@
  '(initial-scratch-message "")
  '(split-width-threshold 0)
  '(split-height-threshold nil)
-  ;; Removes whitespace at end of lines
+ ;; Removes whitespace at end of lines
  '(truncate-lines t)
  '(ring-bell-function #'ignore)
  '(warning-minimum-level :error)
  '(require-final-newline t))
 
-(setq user-config-dir
-  (expand-file-name (file-name-directory user-init-file)))
+(setq-default user-config-dir
+              (expand-file-name (file-name-directory user-init-file)))
 
-(setq backup-directory-alist
-      `((".*" . ,(concat user-config-dir "backups/"))))
+(setq-default backup-directory-alist
+              `((".*" . ,(concat user-config-dir "backups/"))))
 
 (setq auto-save-file-name-transforms
       `((".*" ,(concat user-config-dir "auto-saves/") t)))
@@ -40,24 +44,28 @@
   "Return the quoted form from the current point."
   (save-excursion
     (when (re-search-backward "^(" nil t)
-          (form-at-point))))
+      (form-at-point))))
 
 (defun get-test-name (test-def)
-    (cadr test-def))
+  "Get the name of test from TEST-DEF."
+  (cadr test-def))
 
 (defun run-elisp-koan-test ()
-  "run test"
+  "Run elisp koan test at point."
   (interactive)
-  (if (and (bound-and-true-p projectile-mode) (s-ends-with-p "elisp-koans/" (projectile-project-root)))
+  (if (and (bound-and-true-p projectile-mode)
+           (s-ends-with-p "elisp-koans/" (projectile-project-root)))
       (let ((test-def (get-quoted-form-at-point)))
         (if (not test-def)
             (message "not valid sexp")
           (load-file (concat (projectile-project-root) "elisp-koans.el"))
           (eval test-def)
-          (elisp-koans/run-test (get-test-name test-def))))
-    (princ "You are not in the elisp-koans repo")))
+          (when (functionp 'elisp-koans/run-test)
+            (elisp-koans/run-test (get-test-name test-def)))
+          (princ "You are not in the elisp-koans repo")))))
 
 (defun set-mode-for-backupish-files ()
+  "Set mode for file are similar backup files."
   (when (and buffer-file-name
              (string-match "\\(.*\\)~[^/]*\\'" buffer-file-name))
     (let ((base (match-string 1 buffer-file-name)))
@@ -68,18 +76,19 @@
 
 ;; Major mode hooks
 (add-hook 'emacs-lisp-mode-hook
-  (lambda ()
-    ;; Use spaces, not tabs.
-    (progn
-      (setq indent-tabs-mode nil)
-      (define-key emacs-lisp-mode-map (kbd "C-c C-r") #'run-elisp-koan-test))
-    ))
+          (lambda ()
+            ;; Use spaces, not tabs.
+            (progn
+              (setq indent-tabs-mode nil)
+              (define-key emacs-lisp-mode-map (kbd "C-c C-r") #'run-elisp-koan-test))
+            ))
 (add-hook 'js-json-mode-hook
-          (lambda () (if (((equal (buffer-name) "audiosink.json") . (json-pretty-print-buffer))))))
+          (lambda () (if (equal (buffer-name) "audiosink.json") (json-pretty-print-buffer))))
 
 (defun do-calc-clear-calculations ()
-  (when (not (equal (calc-stack-size) 0))
-    (calc-pop (calc-stack-size))))
+  (when
+      (not (equal (calc-stack-size) 0)))
+  (calc-pop (calc-stack-size)))
 
 (defun calc-clear-calculations ()
   (interactive)
@@ -105,18 +114,31 @@
 (column-number-mode 1)
 (add-hook 'prog-mode-hook (lambda () (display-line-numbers-mode 1)))
 
-; deb key bindings
+;; deb key bindings
+(global-set-key
+ (kbd "C-c d")
+ (lambda ()
+   (interactive)
+   (save-excursion
+     (goto-char (point-min))
+     ;; Remove all comment lines
+     (delete-matching-lines
+      (concat "^[ \t]*"
+              (regexp-quote (string-trim-right comment-start))))
+     ;; Collapse multiple blank lines into one
+     (goto-char (point-min))
+     (while (re-search-forward "\n\\{3,\\}" nil t)
+       (replace-match "\n\n"))
+     ;; Remove leading/trailing blank lines
+     (goto-char (point-min))
+     (when (looking-at-p "\n")
+       (delete-blank-lines))
+     (goto-char (point-max))
+     (when (looking-back "\n" nil)
+       (delete-blank-lines)))))
 (global-set-key (kbd "C-c b") (lambda () (interactive) (projectile-switch-to-buffer)))
-(global-set-key (kbd "C-c d") (lambda () (interactive) (delete-matching-lines (concat "^" comment-start))))
 (global-set-key (kbd "C-c r") (lambda () (interactive) (load user-init-file) ) )
 (global-set-key (kbd "C-c u") (lambda () (interactive) (package-upgrade-all nil) ))
-
-
-(defun user-installed-p (package)
-  ""
-  (let* ((pkg-desc (cadr (assq package package-alist)))
-         (dir (package-desc-dir pkg-desc)))
-    (file-in-directory-p dir package-user-dir)))
 
 (defun my-jbeam-try-load-mode (mode)
   "Load MODE jbeam modes if we are in jbeam-edit project."
@@ -137,7 +159,7 @@
 (add-to-list 'auto-mode-alist
              '("\\.jbeam\\'" . (lambda () (my-jbeam-try-load-mode 'jbeam-mode))))
 
-; remove ugly bars
+;; remove ugly bars
 (menu-bar-mode -1)
 
 (if window-system
@@ -145,16 +167,16 @@
            (scroll-bar-mode -1))
   )
 
-; y/n is better than yes/no
+;; y/n is better than yes/no
 (fset 'yes-or-no-p 'y-or-n-p)
 
 ;; allow me to go other windows
 (windmove-default-keybindings)
 
 (org-babel-do-load-languages
-      'org-babel-load-languages
-      '((js . t)
-        (haskell . t)))
+ 'org-babel-load-languages
+ '((js . t)
+   (haskell . t)))
 
 (defvar scratchpad-buffer "*scratch*"
   "Name of the scratchpad buffer.")
@@ -192,3 +214,4 @@
 (add-to-list 'org-src-lang-modes '("bnf" . bnf))
 
 (provide 'misc)
+;;; misc.el ends here

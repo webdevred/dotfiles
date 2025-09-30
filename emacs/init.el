@@ -8,16 +8,16 @@
 (require 'package)
 
 (setq package-archives
-        '(("gnu" . "https://elpa.gnu.org/packages/")
-          ("melpa" . "https://melpa.org/packages/")))
+      '(("gnu" . "https://elpa.gnu.org/packages/")
+        ("melpa" . "https://melpa.org/packages/")))
 
 (package-initialize)
 
 (unless package-archive-contents
   (package-refresh-contents))
 
-(setq use-package-always-ensure t)
-(setq use-package-always-defer t)
+(setq-default use-package-always-ensure t)
+(setq-default use-package-always-defer t)
 
 (unless (package-installed-p 'use-package)
   (package-install 'use-package))
@@ -38,6 +38,21 @@
   (editorconfig-mode 1))
 
 (defun magit-dont-force-push-to-wrong (orig-fun &rest args)
+  "Advice around Magit’s git command execution to prevent dangerous force pushes.
+
+ORIG-FUN is the original Magit function being advised.
+ARGS are the arguments passed to the git command.
+
+Specifically:
+- For any command other than `push`, this just delegates to ORIG-FUN.
+- For `git push`, it inspects whether the call includes a force flag
+  (`--force` or `--force-with-lease`).
+- If a force push is requested *and* an explicit refspec is given
+  (e.g. SRC:DEST), it checks whether SRC and DEST are the same branch
+  (ignoring the `refs/heads/` prefix).
+- If they differ, the push is rejected and a warning is shown,
+  preventing accidental force-pushes to the wrong branch.
+- Otherwise, the original push is allowed."
   (let ((cmd (car args)))
     (if (not (equal cmd "push"))
         (apply orig-fun args)
@@ -98,8 +113,8 @@
   (undo-tree-visualizer-lazy-drawing t)
   (undo-tree-auto-save-history t)
   :config
-  (setq undo-tree-history-directory-alist
-        `(("." . ,(expand-file-name "undo-tree-history" user-emacs-directory))))
+  (setq-default undo-tree-history-directory-alist
+                `(("." . ,(expand-file-name "undo-tree-history" user-emacs-directory))))
   (unless (file-directory-p (expand-file-name "undo-tree-history" user-emacs-directory))
     (make-directory (expand-file-name "undo-tree-history" user-emacs-directory) t)))
 
@@ -115,7 +130,17 @@
     (eglot--managed-mode-off)))
 
 (defun my-markup-formatter (orig-fun &rest args)
-  "Enable math rendering and replace carriage returns with newlines."
+  "Advice to normalize markup output and enable math rendering.
+
+ORIG-FUN is the original formatter function being advised.
+ARGS are the arguments passed to ORIG-FUN.
+
+This wrapper does two things:
+1. Ensures `markdown-enable-math` is non-nil so that LaTeX-style math
+   rendering works in Markdown buffers.
+2. Normalizes line endings by converting Windows-style CRLF (\"\\r\\n\")
+   and lone carriage returns (\"\\r\") into Unix-style newlines (\"\\n\"),
+   which avoids rendering issues in mixed-platform text."
   (let ((markdown-enable-math t))
     (let* ((raw (apply orig-fun args))
            (normalized (string-replace "\r\n" "\n" raw))
@@ -239,17 +264,17 @@
 (use-package ido
   :defer nil
   :custom
-  (ido-enable-flex-matching t
-   ido-everywhere t
-   ido-ignore-files '("\\`\\.nfs" "\\`#.*" "\\`.*~"))
+  (ido-enable-flex-matching t)
+  (ido-everywhere t)
+  (ido-ignore-files '("\\`\\.nfs" "\\`#.*" "\\`.*~"))
   :config
   (ido-mode 1))
 
 (use-package flycheck
-  :hook ((emacs-lisp-mode-hook . flycheck-mode)))
+  :hook ((emacs-lisp-mode . flycheck-mode)))
 
 (use-package paredit
-    :hook ((emacs-lisp-mode-hook . paredit-mode)))
+  :hook ((emacs-lisp-mode . paredit-mode)))
 
 ;; languages
 

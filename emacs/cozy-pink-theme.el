@@ -1,3 +1,7 @@
+;;; package --- Summary: theme file
+;;; Commentary:
+;;; Code:
+
 (deftheme cozy-pink
   "A simple theme for Emacs.")
 
