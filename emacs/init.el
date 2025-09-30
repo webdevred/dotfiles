@@ -301,7 +301,7 @@ This wrapper does two things:
 ;;   :diminish 'haskell-doc-mode)
 
 (defun my-eglot-ensure-if-supported ()
-  "Start eglot if current major mode is supported and the language server executable is found."
+  "Start eglot if current major mode is supported and the executable is found."
   (message "[eglot-debug] Running in mode: %s" major-mode)
   (unless (featurep 'eglot)
     (require 'eglot))
