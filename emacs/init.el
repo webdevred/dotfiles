@@ -270,6 +270,13 @@ This wrapper does two things:
   :config
   (ido-mode 1))
 
+(use-package ido-grid-mode
+  :custom
+  (ido-grid-mode-jump t)
+  (ido-grid-mode-padding " | ")
+  :config
+  (ido-grid-mode 1))
+
 (use-package flycheck
   :hook ((emacs-lisp-mode . flycheck-mode)))
 
