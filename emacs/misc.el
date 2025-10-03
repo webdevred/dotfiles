@@ -25,6 +25,48 @@
  '(warning-minimum-level :error)
  '(require-final-newline t))
 
+(defun my/display-buffer-right-or-reuse (buffer _alist)
+  "Show BUFFER on the right side."
+  (let* ((windows
+          (cl-remove-if
+           (lambda (win)
+             (with-current-buffer (window-buffer win)
+               (or (string-match-p "^Treemacs-Buffer-" (buffer-name))
+                   (eq major-mode 'treemacs-mode))))
+           (window-list)))
+         (right-win (window-in-direction 'right)))
+    (cond
+     ((= (length windows) 2)
+      (let ((other (car (delq (selected-window) windows))))
+        (when other
+          (set-window-buffer other buffer)
+          other)))
+
+     ((and right-win
+           (not (with-current-buffer (window-buffer right-win)
+                  (eq major-mode 'treemacs-mode))))
+      (set-window-buffer right-win buffer)
+      right-win)
+
+     (t
+      (let ((new-win (split-window (selected-window) nil 'right)))
+        (set-window-buffer new-win buffer)
+        new-win)))))
+
+(setq display-buffer-alist
+      '(("\\*Buffer List\\*" (display-buffer-in-side-window)
+         (side . top)
+         (slot . 0)
+         (window-height . shrink-window-if-larger-than-buffer))
+        ("\\*Completions\\*" (display-buffer-in-side-window)
+         (window-height . 0.20)
+         (side . bottom)
+         (slot . -2))
+        ("^\\(\\*[^\\*]+\\*\\)\\|\\(magit: .*\\)$"
+         (my/display-buffer-right-or-reuse)
+         (direction . right)
+         (body-function . select-window))))
+
 (setq-default user-config-dir
               (expand-file-name (file-name-directory user-init-file)))
 
