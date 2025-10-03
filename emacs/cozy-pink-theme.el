@@ -19,8 +19,7 @@
    `(default ((,class (:foreground ,pink :background ,black))))
 
    `(minibuffer-prompt ((,class (:foreground ,purple))))
-   `(hl-line ((,class (:foreground ,"#0000ff", :background ,purple :weight bold))))
-   `(error ((,class (:foreground "#8B0000"))))
+   `(hl-line ((,class (:foreground "#0000ff" :background ,purple :weight bold))))
    `(mode-line ((,class (:foreground ,black :background ,pink))))
    `(mode-line-inactive ((,class (:foreground ,black :background ,purple))))
 
@@ -39,5 +38,4 @@
   )
 
 (provide-theme 'cozy-pink)
-(provide 'cozy-pink-theme)
 ;;; cozy-pink-theme.el ends here
