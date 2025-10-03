@@ -279,8 +279,10 @@ This wrapper does two things:
   :config
   (ido-grid-mode 1))
 
-(use-package flycheck
-  :hook ((emacs-lisp-mode . flycheck-mode)))
+(use-package flymake
+  :config
+  (add-to-list 'trusted-content (file-truename user-emacs-directory))
+  :hook ((emacs-lisp-mode . flymake-mode)))
 
 (use-package paredit
   :hook ((emacs-lisp-mode . paredit-mode)))
