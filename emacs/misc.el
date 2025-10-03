@@ -75,13 +75,13 @@
               (expand-file-name (file-name-directory user-init-file)))
 
 (setq-default backup-directory-alist
-              `((".*" . ,(concat user-config-dir "backups/"))))
+              `((".*" . ,(concat user-config-dir "var/backups/"))))
 
 (setq auto-save-file-name-transforms
-      `((".*" ,(concat user-config-dir "auto-saves/") t)))
+      `((".*" ,(concat user-config-dir "var/auto-saves/") t)))
 
-(dolist (dir (list (concat user-config-dir "backups/")
-                   (concat user-config-dir "auto-saves/")))
+(dolist (dir (list (concat user-config-dir "var/backups/")
+                   (concat user-config-dir "var/auto-saves/")))
   (unless (file-directory-p dir)
     (make-directory dir t)))
 

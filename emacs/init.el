@@ -112,12 +112,13 @@ Specifically:
   (undo-tree-visualizer-diff t)
   (undo-tree-visualizer-lazy-drawing t)
   (undo-tree-auto-save-history t)
-  :bind ((:map undo-tree-map ("C-x 0" . #'undo-tree-visualizer-quit)))
+  :bind (:map undo-tree-map ("C-x 0" . #'undo-tree-visualizer-quit))
   :config
-  (setq-default undo-tree-history-directory-alist
-                `(("." . ,(expand-file-name "undo-tree-history" user-emacs-directory))))
-  (unless (file-directory-p (expand-file-name "undo-tree-history" user-emacs-directory))
-    (make-directory (expand-file-name "undo-tree-history" user-emacs-directory) t)))
+  (let ((undo-tree-hist (expand-file-name "var/undo-tree-history" user-emacs-directory)))
+    (setq-default undo-tree-history-directory-alist
+                  `(("." . ,undo-tree-hist)))
+    (unless (file-directory-p undo-tree-hist)
+      (make-directory undo-tree-hist t))))
 
 (defun eglot-unmanage-buffer ()
   "Force Eglot to stop managing this buffer if it's on the denylist."
