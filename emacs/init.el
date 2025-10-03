@@ -112,6 +112,7 @@ Specifically:
   (undo-tree-visualizer-diff t)
   (undo-tree-visualizer-lazy-drawing t)
   (undo-tree-auto-save-history t)
+  :bind ((:map undo-tree-map ("C-x 0" . #'undo-tree-visualizer-quit)))
   :config
   (setq-default undo-tree-history-directory-alist
                 `(("." . ,(expand-file-name "undo-tree-history" user-emacs-directory))))
