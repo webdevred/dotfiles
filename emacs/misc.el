@@ -62,6 +62,10 @@
          (window-height . 0.20)
          (side . bottom)
          (slot . -2))
+        ("^.+\\.el\\.gz$"
+         (my/display-buffer-right-or-reuse)
+         (direction . right)
+         (body-function . select-window))
         ("^\\(\\*[^\\*]+\\*\\)\\|\\(magit: .*\\)$"
          (my/display-buffer-right-or-reuse)
          (direction . right)
