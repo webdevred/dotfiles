@@ -325,6 +325,17 @@ This wrapper does two things:
             (eglot-ensure))
         (message "[eglot-debug] Executable '%s' not found, not starting eglot" executable)))))
 
+(defun calc-clear-calculations ()
+  (interactive)
+  (when (and (equal major-mode 'calc-mode)
+             (not (equal (calc-stack-size) 0)))
+    (calc-pop (calc-stack-size))))
+
+(use-package calc
+  :bind (("C-c c" . #'calc)
+         :map calc-mode-map
+         ("C-c k" . #'calc-clear-calculations)
+         ("C-x 0" . #'calc-quit)))
 
 (use-package markdown-mode
   :hook (markdown-mode . my-eglot-ensure-if-supported)

@@ -85,19 +85,6 @@
 (add-hook 'js-json-mode-hook
           (lambda () (if (equal (buffer-name) "audiosink.json") (json-pretty-print-buffer))))
 
-(defun do-calc-clear-calculations ()
-  (when
-      (not (equal (calc-stack-size) 0)))
-  (calc-pop (calc-stack-size)))
-
-(defun calc-clear-calculations ()
-  (interactive)
-  (when (equal major-mode 'calc-mode)
-    (do-calc-clear-calculations)))
-
-(add-hook 'calc-mode-hook
-          (lambda () (define-key calc-mode-map (kbd "C-c k") #'calc-clear-calculations)))
-
 (add-hook 'text-mode-hook #'visual-line-mode)
 
 (require 'ansi-color)
