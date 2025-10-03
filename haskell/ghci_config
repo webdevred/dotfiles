@@ -1,4 +1,4 @@
--- -*- mode: haskell -*-
+-- -*- mode: ghci-script -*-
 :set prompt "λ> "
 :set -XOverloadedStrings
 :set editor vim
