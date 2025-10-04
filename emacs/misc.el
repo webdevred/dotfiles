@@ -23,7 +23,8 @@
  '(truncate-lines t)
  '(ring-bell-function #'ignore)
  '(warning-minimum-level :error)
- '(require-final-newline t))
+ '(require-final-newline t)
+ '(js-indent-level 2))
 
 (defun my/display-buffer-right-or-reuse (buffer _alist)
   "Show BUFFER on the right side."
@@ -166,7 +167,8 @@
        (delete-blank-lines))
      (goto-char (point-max))
      (when (looking-back "\n" nil)
-       (delete-blank-lines)))))
+       (delete-blank-lines))
+     (indent-region (point-min) (point-max)))))
 (global-set-key (kbd "C-c b") (lambda () (interactive) (projectile-switch-to-buffer)))
 (global-set-key (kbd "C-c r") (lambda () (interactive) (load user-init-file) ) )
 (global-set-key (kbd "C-c u") (lambda () (interactive) (package-upgrade-all nil) ))

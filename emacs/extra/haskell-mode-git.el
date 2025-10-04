@@ -172,17 +172,17 @@ COMPONENT is a string like 'library' or 'executable foo'."
 (with-eval-after-load 'haskell-mode
   (define-key haskell-mode-map (kbd "C-c l") #'haskell-run-hlint)
   (define-key haskell-mode-map (kbd "C-c t") #'haskell-run-tests)
-  (define-key haskell-mode-map (kbd "C-c C-a") #'haskell-command-insert-language-pragma))
+  (define-key haskell-mode-map (kbd "C-c C-a") #'haskell-command-insert-language-pragma)
+  ;; annoying minor mode modelines
+  (diminish 'haskell-collapse-mode)
+  (diminish 'haskell-doc-mode)
+  (diminish 'haskell-indent-mode)
+  (diminish 'interactive-haskell-mode)
+  )
 
 (setq haskell-process-args-stack-ghci '("--ghc-options" "-w")
       haskell-process-show-debug-tips t
       haskell-doc-prettify-types t
       haskell-indentation-electric-flag t)
 
-;; ----------------
-;; annoying minor mode modelines
-;; ----------------
-(with-eval-after-load 'diminish
-  (dolist (mode '(haskell-collapse-mode haskell-doc-mode haskell-indent-mode interactive-haskell-mode))
-    (diminish mode)))
 ;;; haskell-mode-git.el ends here

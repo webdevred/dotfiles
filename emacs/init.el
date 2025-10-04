@@ -246,7 +246,8 @@ This wrapper does two things:
   (projectile-use-git-grep t))
 
 (use-package rainbow-mode
-  :hook (prog-mode . rainbow-mode)
+  :hook ((prog-mode . rainbow-mode)
+         (conf-mode . rainbow-mode))
   :custom
   (rainbow-x-colors nil))
 
@@ -274,6 +275,8 @@ This wrapper does two things:
   (ido-mode 1))
 
 (use-package ido-grid-mode
+  :defer nil
+  :after ido
   :custom
   (ido-grid-mode-jump t)
   (ido-grid-mode-padding " | ")
@@ -342,8 +345,13 @@ This wrapper does two things:
          ("C-c k" . #'calc-clear-calculations)
          ("C-x 0" . #'calc-quit)))
 
+(defun my-subword ()
+  (subword-mode 1)
+  (setq-local show-trailing-whitespace t))
+
 (use-package markdown-mode
-  :hook (markdown-mode . my-eglot-ensure-if-supported)
+  :hook ((markdown-mode . my-subword)
+         (markdown-mode . my-eglot-ensure-if-supported))
   :mode (("\\.md\\'" . markdown-mode)
          ("\\.markdown\\'" . markdown-mode))
   :custom-face
@@ -359,7 +367,8 @@ This wrapper does two things:
 (use-package apache-mode
   :mode (("/\\.htaccess\\'" . apache-mode)))
 
-(use-package php-mode)
+(use-package php-mode
+  :hook ((php-mode . my-subword)))
 
 (use-package yaml-mode
   :hook (yaml-mode . my-eglot-ensure-if-supported)
