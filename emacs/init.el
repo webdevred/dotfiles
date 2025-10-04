@@ -112,7 +112,8 @@ Specifically:
   (undo-tree-visualizer-diff t)
   (undo-tree-visualizer-lazy-drawing t)
   (undo-tree-auto-save-history t)
-  :bind (:map undo-tree-map ("C-x 0" . #'undo-tree-visualizer-quit))
+  :bind (:map undo-tree-visualizer-mode-map
+              ("C-x 0" . #'undo-tree-visualizer-quit))
   :config
   (let ((undo-tree-hist (expand-file-name "var/undo-tree-history" user-emacs-directory)))
     (setq-default undo-tree-history-directory-alist
@@ -197,10 +198,10 @@ This wrapper does two things:
     (interactive)
     (realgud:gdb "gdb"))
   :hook ((c-mode c++-mode) . (lambda () (require 'realgud)))
-  :bind ( (:map c-mode-map
-                ("C-c g" . #'my-realgud-gdb-wrapper))
-          (:map c++-mode-map
-                ("C-c g" . #'my-realgud-gdb-wrapper))))
+  :bind ( :map c-mode-map
+          ("C-c g" . #'my-realgud-gdb-wrapper)
+          :map c++-mode-map
+          ("C-c g" . #'my-realgud-gdb-wrapper)))
 
 (use-package corfu
   :hook ((prog-mode . corfu-mode)
