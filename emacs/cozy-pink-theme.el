@@ -26,8 +26,9 @@
    `(font-lock-type-face ((,class (:foreground ,purple))))
    `(font-lock-variable-name-face ((,class (:foreground ,purple))))
 
-   `(flymake-error-echo ((,class (:foreground "#8B0000"))))
-   `(flymake-warning-echo ((,class (:foreground "#32CD32"))))
+   `(flymake-error-echo ((,class (:foreground "#8B0000" :size 20 :weight bold))))
+   `(flymake-warning-echo ((,class (:foreground "#FF8C00" :size 20 :weight bold))))
+   `(flymake-note-echo ((,class (:foreground "#006400" :size 20 :weight bold))))
    `(line-number ((,class (:foreground ,pink))))
    `(match ((,class (:background ,gray))))
    `(isearch ((,class (:foreground ,purple :background ,gray))))
