@@ -31,8 +31,7 @@
           (cl-remove-if
            (lambda (win)
              (with-current-buffer (window-buffer win)
-               (or (string-match-p "^Treemacs-Buffer-" (buffer-name))
-                   (eq major-mode 'treemacs-mode))))
+               (eq major-mode 'treemacs-mode)))
            (window-list)))
          (right-win (window-in-direction 'right)))
     (cond
@@ -54,21 +53,20 @@
         new-win)))))
 
 (setq display-buffer-alist
-      '(("\\*Buffer List\\*" (display-buffer-in-side-window)
-         (side . top)
+      '(("\\*\\(Warnings\\|Completions\\|Buffer List\\)\\*" (display-buffer-in-side-window)
+         (side . bottom)
          (slot . 0)
          (window-height . shrink-window-if-larger-than-buffer))
-        ("\\*Completions\\*" (display-buffer-in-side-window)
-         (window-height . 0.20)
-         (side . bottom)
-         (slot . -2))
-        ("^.+\\.el\\.gz$"
+        ("^\\(\\*undo-tree\\|\s\\*Treemacs\\|\s\\*transient\\*\\)" nil)
+        ("^COMMIT_EDITMSG$"
          (my/display-buffer-right-or-reuse)
-         (direction . right)
          (body-function . select-window))
-        ("^\\(\\*[^\\*]+\\*\\)\\|\\(magit: .*\\)$"
-         (my/display-buffer-right-or-reuse)
-         (direction . right)
+        ("^\\(\\*[^\\*]+\\*\\)\\|\\(magit.*: .*\\)$"
+         (display-buffer-reuse-window my/display-buffer-right-or-reuse)
+         (body-function . select-window))
+        (".*"
+         (display-buffer-reuse-window display-buffer-in-previous-window display-buffer-use-some-window)
+         (some-window 'lru)
          (body-function . select-window))))
 
 (setq-default user-config-dir
