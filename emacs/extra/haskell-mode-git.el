@@ -32,9 +32,9 @@ COMPONENT is a string like 'library' or 'executable foo'."
       (while (not (eobp))
         (when (looking-at "^\\(library\\|executable\\|test-suite\\)\\(?:\\s-+\\([^ \n]+\\)\\)?")
           (setq current-comp
-                (if (match-string 2)
+                (if (and (match-string 2) (not (string-suffix-p ":" (match-string 2))))
                     (cons (match-string 1) (match-string 2))
-                  (match-string 1))))
+                  (cons (match-string 1) nil))))
         (when (and current-comp
                    (looking-at "^\\s-+hs-source-dirs:\\s-*\\(.*\\)"))
           (let ((dirs (split-string (match-string 1) "[ \t]+" t)))
@@ -70,8 +70,10 @@ COMPONENT is a string like 'library' or 'executable foo'."
                            dirs)
               (setq result
                     (cond
-                     ((string-match-p "\\`library" (car name))
+                     ((and (string-match-p "\\`library" (car name)) (eq (cdr name) nil))
                       (concat "lib:" project-name))
+                     ((string-match-p "\\`library" (car name))
+                      (concat project-name ":lib:" (cdr name)))
                      ((string-match-p "\\`executable" (car name))
                       (concat project-name ":exe:" (cdr name)))
                      ((string-match-p "\\`test-suite" (car name))
@@ -101,7 +103,11 @@ COMPONENT is a string like 'library' or 'executable foo'."
             (unless (cl-some (lambda (arg) (string-match-p "\\[a-z-]+:" arg)) haskell-process-args-cabal-repl)
               (setq-local haskell-process-args-cabal-repl (cons (get-cabal-target-for-buffer) haskell-process-args-cabal-repl)))
             (message "cabal repl args: %S" haskell-process-args-cabal-repl)
-            (when (and (bound-and-true-p my-haskell-dir-locals-last-dir) (or (haskell-session-maybe) (haskell-session-from-buffer)) (fboundp 'haskell-process-restart))
+            (when (and
+                   (bound-and-true-p my-haskell-dir-locals-last-dir)
+                   (or (haskell-session-maybe)
+                       (haskell-session-from-buffer))
+                   (fboundp 'haskell-process-restart))
               (haskell-process-restart))
             (setq my-haskell-dir-locals-last-dir current-dir)))))))
 
@@ -183,6 +189,7 @@ COMPONENT is a string like 'library' or 'executable foo'."
 (setq haskell-process-args-stack-ghci '("--ghc-options" "-w")
       haskell-process-show-debug-tips t
       haskell-doc-prettify-types t
-      haskell-indentation-electric-flag t)
+      haskell-indentation-electric-flag t
+      haskell-process-suggest-language-pragmas nil)
 
 ;;; haskell-mode-git.el ends here
