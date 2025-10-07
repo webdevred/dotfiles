@@ -99,8 +99,13 @@ COMPONENT is a string like 'library' or 'executable foo'."
             (require 'haskell-mode)
             (unless (derived-mode-p 'haskell-mode)
               (haskell-mode))
-            (hack-local-variables t)
-            (unless (cl-some (lambda (arg) (string-match-p "\\[a-z-]+:" arg)) haskell-process-args-cabal-repl)
+            (if (locate-dominating-file
+                 default-directory
+                 (lambda (d)
+                   (cl-find-if
+                    (lambda (f) (string-match-p "\\.dir-locals\\.el\\'" f))
+                    (directory-files d))))
+                (hack-local-variables t)
               (setq-local haskell-process-args-cabal-repl (cons (get-cabal-target-for-buffer) haskell-process-args-cabal-repl)))
             (message "cabal repl args: %S" haskell-process-args-cabal-repl)
             (when (and
