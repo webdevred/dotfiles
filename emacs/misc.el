@@ -53,12 +53,25 @@
         (set-window-buffer new-win buffer)
         new-win)))))
 
+(defun display-customize (buffer alist)
+  "Display *Customize Group: Apropos* BUFFER in an existing window if possible."
+  (let* ((custom-buffer (get-buffer "*Customize Group: Emacs*"))
+         (custom-window (and custom-buffer (get-buffer-window custom-buffer))))
+    (if custom-window
+        (set-window-buffer custom-window buffer)
+      (display-buffer-use-some-window buffer alist))))
+
 (setq display-buffer-alist
       '(("\\*\\(Warnings\\|Completions\\|Buffer List\\)\\*" (display-buffer-in-side-window)
+         (dedicated . t)
          (side . bottom)
          (slot . 0)
          (window-height . shrink-window-if-larger-than-buffer))
-        ("^\\(\\*undo-tree\\|\s\\*Treemacs\\|\s\\*transient\\*\\)" nil)
+        ;; if the buffer is undo-tree or starts with space, use the default behaviour
+        ;; buffer starting with space typically have special behaviour defined
+        ("^\\(\\*undo-tree\\|\s\\)" nil)
+        ("^\\*Customize "
+         (display-buffer-reuse-window display-customize))
         ("^COMMIT_EDITMSG$"
          (my/display-buffer-right-or-reuse)
          (body-function . select-window))
