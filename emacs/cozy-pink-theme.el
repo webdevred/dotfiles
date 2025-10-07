@@ -26,6 +26,9 @@
    `(font-lock-type-face ((,class (:foreground ,purple))))
    `(font-lock-variable-name-face ((,class (:foreground ,purple))))
 
+   `(custom-button ((,class (:background ,purple :box (:line-width (1 . 3) :color ,purple :style nil) :foreground ,black :background ,purple))))
+   `(custom-button-mouse ((,class (:foreground ,black :background ,pink))))
+
    `(flymake-error-echo ((,class (:foreground "#8B0000" :size 20 :weight bold))))
    `(flymake-warning-echo ((,class (:foreground "#FF8C00" :size 20 :weight bold))))
    `(flymake-note-echo ((,class (:foreground "#006400" :size 20 :weight bold))))

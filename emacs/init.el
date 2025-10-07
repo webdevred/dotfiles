@@ -110,6 +110,7 @@ Specifically:
          (text-mode . undo-tree-mode))
   :custom
   (undo-tree-visualizer-diff t)
+  (undo-tree-enable-undo-in-region t)
   (undo-tree-visualizer-lazy-drawing t)
   (undo-tree-auto-save-history t)
   :bind (:map undo-tree-visualizer-mode-map
