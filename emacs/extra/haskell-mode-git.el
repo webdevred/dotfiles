@@ -87,6 +87,22 @@ COMPONENT is a string like 'library' or 'executable foo'."
 (defvar my-haskell-dir-locals-last-dir nil
   "Holds the last directory for which Haskell dir-locals were applied for the current buffer.")
 
+(defun filter-and-insert-target (target strings)
+  "Filter STRINGS matching pattern [a-z]+:.
+If exactly one match equals TARGET, return STRINGS unchanged.
+Otherwise, remove all matching strings and prepend TARGET if it's a string."
+  (let* ((pattern-pred (lambda (s) (and (stringp s) (string-match-p "^[a-z]+:" s))))
+         (matches (cl-remove-if-not pattern-pred strings))
+         (filtered (cl-remove-if pattern-pred strings)))
+    (cond
+     ((and (= (length matches) 1)
+           (string= (car matches) target))
+      strings)
+     ((stringp target)
+      (cons target filtered))
+     (t
+      filtered))))
+
 (defun my-haskell-apply-dir-locals ()
   "Apply .dir-locals.el automatically for Haskell buffers when switching buffers."
   (when (and buffer-file-name
@@ -96,7 +112,6 @@ COMPONENT is a string like 'library' or 'executable foo'."
       (unless (equal current-dir my-haskell-dir-locals-last-dir)
         (unless (bound-and-true-p my-haskell-applying-dir-locals)
           (let ((my-haskell-applying-dir-locals t))
-            (require 'haskell-mode)
             (unless (derived-mode-p 'haskell-mode)
               (haskell-mode))
             (if (locate-dominating-file
@@ -106,7 +121,9 @@ COMPONENT is a string like 'library' or 'executable foo'."
                     (lambda (f) (string-match-p "\\.dir-locals\\.el\\'" f))
                     (directory-files d))))
                 (hack-local-variables t)
-              (setq-local haskell-process-args-cabal-repl (cons (get-cabal-target-for-buffer) haskell-process-args-cabal-repl)))
+              (let ((target (get-cabal-target-for-buffer)))
+                (when (stringp target)
+                  (setq-local haskell-process-args-cabal-repl (filter-and-insert-target target haskell-process-args-cabal-repl)))))
             (message "cabal repl args: %S" haskell-process-args-cabal-repl)
             (when (and
                    (bound-and-true-p my-haskell-dir-locals-last-dir)

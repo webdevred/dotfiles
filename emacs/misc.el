@@ -62,7 +62,13 @@
       (display-buffer-use-some-window buffer alist))))
 
 (setq display-buffer-alist
-      '(("\\*\\(Warnings\\|Completions\\|Buffer List\\)\\*" (display-buffer-in-side-window)
+      '(("\\*\\(\\HS-Error\\|Backtrace\\|Warnings\\|Completions\\)\\*" (display-buffer-in-side-window)
+         (dedicated . t)
+         (side . bottom)
+         (slot . 0)
+         (window-height . shrink-window-if-larger-than-buffer))
+        ("\\*Buffer List\\*" (display-buffer-in-side-window)
+         (body-function . select-window)
          (dedicated . t)
          (side . bottom)
          (slot . 0)
