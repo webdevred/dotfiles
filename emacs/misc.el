@@ -53,6 +53,13 @@
         (set-window-buffer new-win buffer)
         new-win)))))
 
+(defun display-in-scratch-window (buffer _alist)
+  "Display BUFFER in scratch window if possible,"
+  (let* ((custom-buffer (get-buffer "*scratch*"))
+         (custom-window (and custom-buffer (get-buffer-window custom-buffer))))
+    (when custom-window
+        (set-window-buffer custom-window buffer))))
+
 (defun display-customize (buffer alist)
   "Display *Customize Group: Apropos* BUFFER in an existing window if possible."
   (let* ((custom-buffer (get-buffer "*Customize Group: Emacs*"))
@@ -82,7 +89,7 @@
          (my/display-buffer-right-or-reuse)
          (body-function . select-window))
         ("^\\(\\*[^\\*]+\\*\\)\\|\\(magit.*: .*\\)$"
-         (display-buffer-reuse-window my/display-buffer-right-or-reuse)
+         (display-in-scratch-window display-buffer-reuse-window my/display-buffer-right-or-reuse)
          (body-function . select-window))
         (".*"
          (display-buffer-reuse-window display-buffer-in-previous-window display-buffer-use-some-window)

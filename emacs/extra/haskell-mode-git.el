@@ -122,8 +122,7 @@ Otherwise, remove all matching strings and prepend TARGET if it's a string."
                     (directory-files d))))
                 (hack-local-variables t)
               (let ((target (get-cabal-target-for-buffer)))
-                (when (stringp target)
-                  (setq-local haskell-process-args-cabal-repl (filter-and-insert-target target haskell-process-args-cabal-repl)))))
+                (setq-local haskell-process-args-cabal-repl (filter-and-insert-target target haskell-process-args-cabal-repl))))
             (message "cabal repl args: %S" haskell-process-args-cabal-repl)
             (when (and
                    (bound-and-true-p my-haskell-dir-locals-last-dir)
@@ -212,6 +211,7 @@ Otherwise, remove all matching strings and prepend TARGET if it's a string."
       haskell-process-show-debug-tips t
       haskell-doc-prettify-types t
       haskell-indentation-electric-flag t
-      haskell-process-suggest-language-pragmas nil)
+      haskell-process-suggest-language-pragmas nil
+      haskell-process-suggest-restart nil)
 
 ;;; haskell-mode-git.el ends here

@@ -124,14 +124,17 @@ Specifically:
 
 (defun eglot-unmanage-buffer ()
   "Force Eglot to stop managing this buffer if it's on the denylist."
-  (when (and buffer-file-name
-             (not (string= "cabal.project.local" (file-name-nondirectory buffer-file-name)))
-             (string-match-p "/cabal\\.project\\..*\\'" buffer-file-name)
-             (functionp 'eglot--managed-mode-off)
-             (functionp 'eglot-managed-p)
-             (eglot-managed-p))
-    (message "[Eglot] Disabling eglot-managed-mode for: %s" buffer-file-name)
-    (eglot--managed-mode-off)))
+  (progn
+    (when (and buffer-file-name
+               (not (string= "cabal.project.local" (file-name-nondirectory buffer-file-name)))
+               (string-match-p "/cabal\\.project\\..*\\'" buffer-file-name)
+               (functionp 'eglot--managed-mode-off)
+               (functionp 'eglot-managed-p)
+               (eglot-managed-p))
+      (message "[Eglot] Disabling eglot-managed-mode for: %s" buffer-file-name)
+      (eglot--managed-mode-off))
+         (editorconfig-apply)))
+
 
 (defun my-markup-formatter (orig-fun &rest args)
   "Advice to normalize markup output and enable math rendering.
@@ -363,7 +366,9 @@ This wrapper does two things:
   :hook (fish-mode . my-eglot-ensure-if-supported)
   :mode ("\\.fish\\'" . fish-mode))
 
-(use-package dockerfile-mode)
+(use-package dockerfile-mode
+  :custom
+  (dockerfile-enable-auto-indent t))
 
 (use-package apache-mode
   :mode (("/\\.htaccess\\'" . apache-mode)))

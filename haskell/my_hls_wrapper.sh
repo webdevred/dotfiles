@@ -18,11 +18,12 @@ else
   echo "Warning: Could not find Cabal store directory." >&2
 fi
 
-hspec_path=$(find "$base_path/store/ghc-$ghc_version" -type f -name hspec-discover -exec dirname {} \; | head -n 1 || true)
+hspec_path=$(find "$base_path/store/ghc-$ghc_version" -type f -name hspec-discover | head -n 1 || true)
 
-if [ -n "$hspec_path" ] && [ -x "$hspec_path/hspec-discover" ]; then
+if [ -n "$hspec_path" ] && [ -x "$hspec_path" ]; then
   echo "Found hspec-discover at: $hspec_path" >&2
-  export PATH="$hspec_path:$PATH"
+  hspec_dir=$(dirname "$hspec_path")
+  export PATH="$hspec_dir:$PATH"
 else
   echo "Warning: hspec-discover not found for GHC $ghc_version. Continuing without it." >&2
 fi

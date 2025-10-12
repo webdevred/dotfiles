@@ -3,7 +3,6 @@
 set -euo pipefail
 
 wrapper_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-
 IFS=':' read -r -a _parts <<<"$PATH"
 new_path=""
 for p in "${_parts[@]}"; do

@@ -26,6 +26,6 @@ awk -v block="$comment_block" '
   {
     print
   }
-' "$cabal_file" > tmpfile && mv tmpfile "$cabal_file"
+' "$cabal_file" >tmpfile && mv tmpfile "$cabal_file"
 
 echo "Generated and formatted $cabal_file"
