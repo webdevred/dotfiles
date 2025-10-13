@@ -372,6 +372,11 @@ This wrapper does two things:
   :custom
   (dockerfile-enable-auto-indent t))
 
+(use-package docker
+  :ensure t
+  :bind (("C-c C-d" . docker)
+         ("C-c M-d" . docker-compose)))
+
 (use-package apache-mode
   :mode (("/\\.htaccess\\'" . apache-mode)))
 
