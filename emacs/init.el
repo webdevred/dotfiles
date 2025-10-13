@@ -28,9 +28,10 @@
   :demand t)
 
 (use-package diminish
+  :hook ((subword-mode . (lambda () (diminish 'subword-mode)))
+         (auto-revert-mode . (lambda () (diminish 'auto-revert-mode))))
   :config
-  (diminish 'auto-revert-mode)
-  (diminish 'rainbow-mode)
+  (diminish 'visual-line-mode)
   (diminish 'eldoc-mode))
 
 (use-package editorconfig
@@ -252,6 +253,7 @@ This wrapper does two things:
   (projectile-use-git-grep t))
 
 (use-package rainbow-mode
+  :diminish rainbow-mode
   :hook ((prog-mode . rainbow-mode)
          (conf-mode . rainbow-mode))
   :custom
@@ -356,10 +358,14 @@ This wrapper does two things:
   (setq-local show-trailing-whitespace t))
 
 (use-package markdown-mode
-  :hook ((markdown-mode . my-subword)
+  :hook ((markdown-mode . (lambda () (my-jbeam-try-load-mode 'jbfl-mode)))
+         (markdown-mode . my-subword)
          (markdown-mode . my-eglot-ensure-if-supported))
   :mode (("\\.md\\'" . markdown-mode)
          ("\\.markdown\\'" . markdown-mode))
+  :custom
+  (markdown-fontify-code-blocks-natively t)
+  :config
   :custom-face
   (markdown-metadata-key-face ((t (:foreground "#ff55ff"))))
   (markdown-metadata-value-face ((t (:foreground "#ffaaff")))))

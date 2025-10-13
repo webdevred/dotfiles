@@ -204,19 +204,16 @@
   (let* ((project-root (ignore-errors (projectile-project-root)))
          (project-name (and project-root (projectile-project-name)))
          (elisp-dir (and project-root (concat project-root "/editors"))))
-    (if (and (string= project-name "jbeam-edit")
+    (when (and (string= project-name "jbeam-edit")
              elisp-dir
              (file-directory-p elisp-dir))
         (progn
           (add-to-list 'load-path elisp-dir)
           (require mode)
-          (funcall mode))
-      (fundamental-mode))))
+          (when (eq major-mode 'fundamental-mode) (funcall mode))))))
 
 (add-to-list 'auto-mode-alist
              '("\\.jbfl\\'" . (lambda () (my-jbeam-try-load-mode 'jbfl-mode))))
-(add-to-list 'auto-mode-alist
-             '("\\.jbeam\\'" . (lambda () (my-jbeam-try-load-mode 'jbeam-mode))))
 
 ;; remove ugly bars
 (menu-bar-mode -1)
