@@ -26,39 +26,40 @@
  '(require-final-newline t)
  '(js-indent-level 2))
 
-(defun my/display-buffer-right-or-reuse (buffer _alist)
-  "Show BUFFER on the right side."
+(defun my/display-buffer-right-or-reuse (buffer alist)
+  "Show BUFFER on the right side and run the body function in ALIST."
   (let* ((windows
           (cl-remove-if
            (lambda (win)
              (with-current-buffer (window-buffer win)
-               (eq major-mode 'treemacs-mode)))
+               (window-dedicated-p win)))
            (window-list)))
          (right-win (window-in-direction 'right)))
-    (cond
-     ((= (length windows) 2)
-      (let ((other (car (delq (selected-window) windows))))
-        (when other
-          (set-window-buffer other buffer)
-          other)))
+    (funcall (cdr (assq 'body-function alist))
+             (cond
+              ((= (length windows) 2)
+               (let ((other (car (delq (selected-window) windows))))
+                 (when other
+                   (set-window-buffer other buffer)
+                   other)))
 
-     ((and right-win
-           (not (with-current-buffer (window-buffer right-win)
-                  (eq major-mode 'treemacs-mode))))
-      (set-window-buffer right-win buffer)
-      right-win)
+              ((and right-win
+                    (not (with-current-buffer (window-buffer right-win)
+                           (window-dedicated-p right-win))))
+               (set-window-buffer right-win buffer)
+               right-win)
 
-     (t
-      (let ((new-win (split-window (selected-window) nil 'right)))
-        (set-window-buffer new-win buffer)
-        new-win)))))
+              (t
+               (let ((new-win (split-window (selected-window) nil 'right)))
+                 (set-window-buffer new-win buffer)
+                 new-win))))))
 
 (defun display-in-scratch-window (buffer _alist)
   "Display BUFFER in scratch window if possible,"
   (let* ((custom-buffer (get-buffer "*scratch*"))
          (custom-window (and custom-buffer (get-buffer-window custom-buffer))))
     (when custom-window
-        (set-window-buffer custom-window buffer))))
+      (set-window-buffer custom-window buffer))))
 
 (defun display-customize (buffer alist)
   "Display *Customize Group: Apropos* BUFFER in an existing window if possible."
