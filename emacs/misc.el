@@ -93,7 +93,7 @@
          (display-in-scratch-window display-buffer-reuse-window my/display-buffer-right-or-reuse)
          (body-function . select-window))
         (".*"
-         (display-buffer-reuse-window display-buffer-in-previous-window display-buffer-use-some-window)
+         (display-buffer-reuse-window display-buffer-reuse-mode-window display-buffer-in-previous-window display-buffer-use-some-window)
          (some-window 'lru)
          (body-function . select-window))))
 
