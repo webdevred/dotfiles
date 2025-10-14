@@ -28,11 +28,19 @@
   :demand t)
 
 (use-package diminish
-  :hook ((subword-mode . (lambda () (diminish 'subword-mode)))
-         (auto-revert-mode . (lambda () (diminish 'auto-revert-mode))))
   :config
-  (diminish 'visual-line-mode)
-  (diminish 'eldoc-mode))
+  (diminish 'visual-line-mode))
+
+(use-package subword
+  :diminish 'subword-mode)
+
+(use-package autorevert
+  :custom
+  (auto-revert-stop-on-user-input nil)
+  :diminish 'auto-revert-mode)
+
+(use-package eldoc
+  :diminish 'eldoc-mode)
 
 (use-package editorconfig
   :config
@@ -297,6 +305,11 @@ This wrapper does two things:
   (ido-grid-mode 1))
 
 (use-package flymake
+  :custom
+  (flymake-wrap-around t)
+  :bind
+  (:map flymake-mode-map (("C-c C-p" . #'flymake-goto-prev-error)
+                          ("C-c C-n" . #'flymake-goto-next-error)))
   :config
   (add-to-list 'trusted-content (file-truename user-emacs-directory))
   :hook ((emacs-lisp-mode . flymake-mode)))
