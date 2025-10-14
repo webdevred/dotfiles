@@ -1,4 +1,4 @@
-;;; package --- Summary: init file
+;; package --- Summary: init file
 ;;; Commentary:
 ;;; Code:
 
@@ -229,6 +229,7 @@ This wrapper does two things:
 (use-package treemacs
   :custom
   (treemacs-no-png-images t)
+  (treemacs-eldoc-display 'detailed)
   :config
   (add-to-list 'treemacs-ignored-file-predicates #'treemacs-hide-boring-files)
   :custom-face
