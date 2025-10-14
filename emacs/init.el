@@ -185,7 +185,8 @@ This wrapper does two things:
   (advice-add 'eglot--format-markup :around #'my-markup-formatter)
   (setq-default eglot-workspace-configuration
                 '((haskell (formattingProvider . "fourmolu")
-                           (plugin (fourmolu (config (external . t)))))
+                           (plugin (fourmolu (config (external . t)))
+                                   (rename (config (crossModule . t)))))
                   (yaml
                    (schemas . ((https://www.schemastore.org/clang-format.json . "/.clang-format")
                                (https://www.schemastore.org/clangd.json . "/clangd.yaml")))
