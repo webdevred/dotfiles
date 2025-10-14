@@ -249,7 +249,10 @@ This wrapper does two things:
 (use-package projectile
   :diminish 'projectile-mode
   :commands projectile-command-map projectile-project-root
-  :bind ("C-c C-p" . projectile-command-map)
+  :bind
+  (:map projectile-mode-map
+        ("C-c C-p" . projectile-command-map)
+        ("C-c b" . projectile-switch-to-buffer))
   :custom
   (projectile-use-git-grep t))
 

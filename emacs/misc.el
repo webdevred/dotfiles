@@ -83,7 +83,8 @@
          (window-height . shrink-window-if-larger-than-buffer))
         ;; if the buffer is undo-tree or starts with space, use the default behaviour
         ;; buffer starting with space typically have special behaviour defined
-        ("^\\(\\*undo-tree\\|\s\\)" nil)
+        ("^\\(\\*undo-tree\\|\s\\)" nil
+         (dedicated . t))
         ("^\\*Customize "
          (display-buffer-reuse-window display-customize))
         ("^COMMIT_EDITMSG$"
@@ -196,9 +197,7 @@
      (when (looking-back "\n" nil)
        (delete-blank-lines))
      (indent-region (point-min) (point-max)))))
-(global-set-key (kbd "C-c b") (lambda () (interactive) (projectile-switch-to-buffer)))
 (global-set-key (kbd "C-c r") (lambda () (interactive) (load user-init-file) ) )
-(global-set-key (kbd "C-c u") (lambda () (interactive) (package-upgrade-all nil) ))
 
 (defun my-jbeam-try-load-mode (mode)
   "Load MODE jbeam modes if we are in jbeam-edit project."
@@ -229,6 +228,21 @@
 
 ;; allow me to go other windows
 (windmove-default-keybindings)
+(defun my-window-swap (try-dir &optional swap-other-dir)
+  (interactive)
+  (let ((dir (let ((win (window-in-direction try-dir)))
+               (if (and win (not (window-dedicated-p win)))
+                   try-dir (cl-find-if-not
+                            (lambda (other-dir) (eq other-dir try-dir))
+                            '(left right))))))
+    (if (or swap-other-dir (and (eq try-dir dir) (not (window-dedicated-p (window-in-direction dir)))))
+      (windmove-swap-states-in-direction dir))))
+
+(define-key windmove-mode-map (kbd "C-c C-s") (lambda () (interactive) (my-window-swap 'right t)))
+(define-key windmove-mode-map (kbd "s-M-<right>") (lambda () (interactive) (my-window-swap 'right)))
+(define-key windmove-mode-map (kbd "s-M-<left>") (lambda () (interactive) (my-window-swap 'left)))
+(define-key windmove-mode-map (kbd "s-M-<up>") #'windmove-swap-states-up)
+(define-key windmove-mode-map (kbd "s-M-<down>") #'windmove-swap-states-down)
 
 (org-babel-do-load-languages
  'org-babel-load-languages
