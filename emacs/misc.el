@@ -83,6 +83,8 @@
          (window-height . shrink-window-if-larger-than-buffer))
         ;; if the buffer is undo-tree or starts with space, use the default behaviour
         ;; buffer starting with space typically have special behaviour defined
+        ("^\s\\*Treemacs" nil
+         (window-width . 35))
         ("^\\(\\*undo-tree\\|\s\\)" nil
          (dedicated . t))
         ("^\\*Customize "
