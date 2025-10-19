@@ -285,12 +285,20 @@ This wrapper does two things:
   (rainbow-delimiters-depth-9-face ((t (:foreground "#DD4124")))) ; Red-orange
   )
 
+(defun ido-no-treemacs-buffer ()
+  (cl-delete-if
+   (lambda (buf)
+     (string-match-p "\\` \\*Treemacs-Buffer" buf))
+   ido-temp-list))
+
 (use-package ido
   :defer nil
   :custom
   (ido-enable-flex-matching t)
   (ido-everywhere t)
   (ido-ignore-files '("\\`\\.nfs" "\\`#.*" "\\`.*~"))
+  :hook
+  (ido-make-buffer-list . ido-no-treemacs-buffer)
   :config
   (ido-mode 1))
 
