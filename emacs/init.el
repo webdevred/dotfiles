@@ -269,7 +269,9 @@ This wrapper does two things:
   :hook ((prog-mode . rainbow-mode)
          (conf-mode . rainbow-mode))
   :custom
-  (rainbow-x-colors nil))
+  (rainbow-x-colors nil)
+  (rainbow-html-colors t)
+  (rainbow-html-colors-alist '()))
 
 (use-package rainbow-delimiters
   :hook ((haskell-mode lisp-data-mode) . rainbow-delimiters-mode)
@@ -395,6 +397,8 @@ This wrapper does two things:
   (markdown-metadata-key-face ((t (:foreground "#ff55ff"))))
   (markdown-metadata-value-face ((t (:foreground "#ffaaff")))))
 
+(use-package jbeam-mode)
+
 (use-package fish-mode
   :hook (fish-mode . my-eglot-ensure-if-supported)
   :mode ("\\.fish\\'" . fish-mode))
@@ -416,6 +420,9 @@ This wrapper does two things:
 
 (use-package php-mode
   :hook ((php-mode . my-subword)))
+
+(use-package flymake-php
+  :hook ((php-mode . flymake-mode)))
 
 (use-package yaml-mode
   :hook (yaml-mode . my-eglot-ensure-if-supported)
