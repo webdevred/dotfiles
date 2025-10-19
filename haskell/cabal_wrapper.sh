@@ -13,7 +13,7 @@ done
 
 given_command="${1:-}"
 is_interactive=false
-if [[ -n "$given_command" && "repl" == "$given_command" ]]; then
+if [[ -n "$given_command" ]] && [[ "repl" == "$given_command" || "init" == "$given_command" ]]; then
   is_interactive=true
 fi
 
