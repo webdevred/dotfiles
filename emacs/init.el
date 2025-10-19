@@ -133,16 +133,14 @@ Specifically:
 
 (defun eglot-unmanage-buffer ()
   "Force Eglot to stop managing this buffer if it's on the denylist."
-  (progn
-    (when (and buffer-file-name
-               (not (string= "cabal.project.local" (file-name-nondirectory buffer-file-name)))
-               (string-match-p "/cabal\\.project\\..*\\'" buffer-file-name)
-               (functionp 'eglot--managed-mode-off)
-               (functionp 'eglot-managed-p)
-               (eglot-managed-p))
-      (message "[Eglot] Disabling eglot-managed-mode for: %s" buffer-file-name)
-      (eglot--managed-mode-off))
-         (editorconfig-apply)))
+  (when (and buffer-file-name
+             (not (string= "cabal.project.local" (file-name-nondirectory buffer-file-name)))
+             (string-match-p "/cabal\\.project\\..*\\'" buffer-file-name)
+             (functionp 'eglot--managed-mode-off)
+             (functionp 'eglot-managed-p)
+             (eglot-managed-p))
+    (message "[Eglot] Disabling eglot-managed-mode for: %s" buffer-file-name)
+    (eglot--managed-mode-off)))
 
 
 (defun my-markup-formatter (orig-fun &rest args)
@@ -166,7 +164,8 @@ This wrapper does two things:
 (use-package eglot
   :hook (((c-mode c++-mode haskell-mode haskell-cabal-mode) . eglot-ensure)
          (sh-mode . my-eglot-ensure-if-supported)
-         (eglot-managed-mode . eglot-unmanage-buffer))
+         (eglot-managed-mode . eglot-unmanage-buffer)
+         (eglot-managed-mode . editorconfig-apply))
   :custom
   (eglot-events-buffer-config '(:format lisp))
   (eglot-autoshutdown t)
@@ -259,9 +258,9 @@ This wrapper does two things:
   :diminish 'projectile-mode
   :commands projectile-command-map projectile-project-root
   :bind
-  (:map projectile-mode-map
-        ("C-c C-p" . projectile-command-map)
-        ("C-c b" . projectile-switch-to-buffer))
+  (("C-c C-p" . projectile-command-map)
+   :map projectile-mode-map
+   ("C-c b" . projectile-switch-to-buffer))
   :custom
   (projectile-use-git-grep t))
 
@@ -308,8 +307,8 @@ This wrapper does two things:
   :custom
   (flymake-wrap-around t)
   :bind
-  (:map flymake-mode-map (("C-c C-p" . #'flymake-goto-prev-error)
-                          ("C-c C-n" . #'flymake-goto-next-error)))
+  (:map flymake-mode-map (("C-c p" . #'flymake-goto-prev-error)
+                          ("C-c n" . #'flymake-goto-next-error)))
   :config
   (add-to-list 'trusted-content (file-truename user-emacs-directory))
   :hook ((emacs-lisp-mode . flymake-mode)))
