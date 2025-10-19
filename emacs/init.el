@@ -399,6 +399,9 @@ This wrapper does two things:
   :hook (fish-mode . my-eglot-ensure-if-supported)
   :mode ("\\.fish\\'" . fish-mode))
 
+(use-package iss-mode
+  :mode ("\\.iss\\'" . iss-mode))
+
 (use-package dockerfile-mode
   :custom
   (dockerfile-enable-auto-indent t))
