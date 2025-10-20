@@ -31,6 +31,10 @@
   :config
   (diminish 'visual-line-mode))
 
+(use-package abbrev
+  :ensure nil
+  :diminish 'abbrev-mode)
+
 (use-package subword
   :diminish 'subword-mode)
 
@@ -161,6 +165,17 @@ This wrapper does two things:
            (final (string-replace "\r" "\n" normalized)))
       final)))
 
+(setq eglot-workspace-configuration
+      '((haskell (formattingProvider . "fourmolu")
+                 (plugin (fourmolu (config (external . t)))
+                         (rename (config (crossModule . t)))))
+        (yaml
+         (schemas . ((https://www.schemastore.org/clang-format.json . "/.clang-format")
+                     (https://www.schemastore.org/clangd.json . "/clangd.yaml")))
+         (schemaStore (enable . nil))
+         (completion . t)
+         (hover . t))))
+
 (use-package eglot
   :hook (((c-mode c++-mode haskell-mode haskell-cabal-mode) . eglot-ensure)
          (sh-mode . my-eglot-ensure-if-supported)
@@ -190,15 +205,6 @@ This wrapper does two things:
                eglot-server-programs))
         (push new eglot-server-programs))))
   (advice-add 'eglot--format-markup :around #'my-markup-formatter)
-  (setq-default eglot-workspace-configuration
-                '((haskell (formattingProvider . "fourmolu")
-                           (plugin (fourmolu (config (external . t)))
-                                   (rename (config (crossModule . t)))))
-                  (yaml
-                   (schemas . ((https://www.schemastore.org/clang-format.json . "/.clang-format")
-                               (https://www.schemastore.org/clangd.json . "/clangd.yaml")))
-                   (completion . t)
-                   (hover . t))))
   :bind (:map eglot-mode-map
               ("C-c a" . eglot-code-actions)
               ("C-c f" . eglot-format-buffer)
