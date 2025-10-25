@@ -27,13 +27,14 @@
 (use-package no-littering
   :demand t)
 
+(use-package browse-url
+  :config
+  (setq browse-url-handlers '(("\\`https://hoogle.haskell.org/" . (lambda (url &rest _) (eww url))))))
+
 (use-package diminish
   :config
-  (diminish 'visual-line-mode))
-
-(use-package abbrev
-  :ensure nil
-  :diminish 'abbrev-mode)
+  (diminish 'visual-line-mode)
+  (diminish 'abbrev-mode))
 
 (use-package subword
   :diminish 'subword-mode)
@@ -165,17 +166,6 @@ This wrapper does two things:
            (final (string-replace "\r" "\n" normalized)))
       final)))
 
-(setq eglot-workspace-configuration
-      '((haskell (formattingProvider . "fourmolu")
-                 (plugin (fourmolu (config (external . t)))
-                         (rename (config (crossModule . t)))))
-        (yaml
-         (schemas . ((https://www.schemastore.org/clang-format.json . "/.clang-format")
-                     (https://www.schemastore.org/clangd.json . "/clangd.yaml")))
-         (schemaStore (enable . nil))
-         (completion . t)
-         (hover . t))))
-
 (use-package eglot
   :hook (((c-mode c++-mode haskell-mode haskell-cabal-mode) . eglot-ensure)
          (sh-mode . my-eglot-ensure-if-supported)
@@ -191,6 +181,19 @@ This wrapper does two things:
   (large-file-warning-threshold nil)
   (eldoc-idle-delay 0.5)
   :config
+  (setq-default eglot-workspace-configuration
+                '(:haskell
+                  (:formattingProvider "fourmolu"
+                                       :plugin
+                                       (:fourmolu (:config (:external t)))
+                                       (:rename (:config (:crossModule t))))
+                  :yaml
+                  (:schemas
+                   (( "https://www.schemastore.org/clang-format.json" . "/.clang-format")
+                    ( "https://www.schemastore.org/clangd.json"        . "/clangd.yaml")
+                    ( "" . "/package.yaml"))
+                   :completion t
+                   :hover t)))
   (let ((my-eglot-server-programs
          '(((c-mode c++-mode) . ("clangd"))
            ((haskell-mode haskell-cabal-mode) . ("my_hls_wrapper"))
@@ -423,6 +426,13 @@ This wrapper does two things:
 
 (use-package apache-mode
   :mode (("/\\.htaccess\\'" . apache-mode)))
+
+(use-package jq-mode)
+
+(use-package js
+  :mode (("/\\.jsbeautifyrc\\'" . js-json-mode)
+         ("\\.json\\'" . js-json-mode)
+         ("\\.js\\'" . js-mode)))
 
 (use-package php-mode
   :hook ((php-mode . my-subword)))

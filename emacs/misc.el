@@ -81,6 +81,9 @@
          (side . bottom)
          (slot . 0)
          (window-height . shrink-window-if-larger-than-buffer))
+        ("^\s\\*MetaHelp\\*$"
+         (display-in-scratch-window display-buffer-reuse-window my/display-buffer-right-or-reuse)
+         (body-function . select-window))
         ;; if the buffer is undo-tree or starts with space, use the default behaviour
         ;; buffer starting with space typically have special behaviour defined
         ("^\s\\*Treemacs" nil
@@ -207,12 +210,12 @@
          (project-name (and project-root (projectile-project-name)))
          (elisp-dir (and project-root (concat project-root "/editors"))))
     (when (and (string= project-name "jbeam-edit")
-             elisp-dir
-             (file-directory-p elisp-dir))
-        (progn
-          (add-to-list 'load-path elisp-dir)
-          (require mode)
-          (when (eq major-mode 'fundamental-mode) (funcall mode))))))
+               elisp-dir
+               (file-directory-p elisp-dir))
+      (progn
+        (add-to-list 'load-path elisp-dir)
+        (require mode)
+        (when (eq major-mode 'fundamental-mode) (funcall mode))))))
 
 (add-to-list 'auto-mode-alist
              '("\\.jbfl\\'" . (lambda () (my-jbeam-try-load-mode 'jbfl-mode))))
@@ -238,7 +241,7 @@
                             (lambda (other-dir) (eq other-dir try-dir))
                             '(left right))))))
     (if (or swap-other-dir (and (eq try-dir dir) (not (window-dedicated-p (window-in-direction dir)))))
-      (windmove-swap-states-in-direction dir))))
+        (windmove-swap-states-in-direction dir))))
 
 (define-key windmove-mode-map (kbd "C-c C-s") (lambda () (interactive) (my-window-swap 'right t)))
 (define-key windmove-mode-map (kbd "s-M-<right>") (lambda () (interactive) (my-window-swap 'right)))

@@ -13,7 +13,7 @@
   (haskell-collapse-mode 1)
   (haskell-doc-mode 1)
   (haskell-indent-mode 1)
-  (haskell-decl-scan-mode -1)
+  (haskell-decl-scan-mode 1)
   (interactive-haskell-mode 1))
 
 (add-hook 'haskell-mode-hook #'my-haskell-mode-setup)
@@ -212,6 +212,7 @@ Otherwise, remove all matching strings and prepend TARGET if it's a string."
       haskell-doc-prettify-types t
       haskell-indentation-electric-flag t
       haskell-process-suggest-language-pragmas nil
-      haskell-process-suggest-restart nil)
+      haskell-process-suggest-restart nil
+      haskell-process-prompt-restart nil)
 
 ;;; haskell-mode-git.el ends here
