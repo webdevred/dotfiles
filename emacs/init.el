@@ -24,6 +24,9 @@
 
 (require 'use-package)
 
+(setq-default user-config-dir
+              (expand-file-name (file-name-directory user-init-file)))
+
 (use-package no-littering
   :demand t)
 
@@ -181,17 +184,18 @@ This wrapper does two things:
   (large-file-warning-threshold nil)
   (eldoc-idle-delay 0.5)
   :config
+  (setq empty-schema-path (intern (concat user-config-dir "/empty-schema.json")))
   (setq-default eglot-workspace-configuration
-                '(:haskell
+                `(:haskell
                   (:formattingProvider "fourmolu"
                                        :plugin
-                                       (:fourmolu (:config (:external t)))
-                                       (:rename (:config (:crossModule t))))
+                                       (:fourmolu (:config (:external t))
+                                                  :rename   (:config (:crossModule t))))
                   :yaml
                   (:schemas
-                   (( "https://www.schemastore.org/clang-format.json" . "/.clang-format")
-                    ( "https://www.schemastore.org/clangd.json"        . "/clangd.yaml")
-                    ( "" . "/package.yaml"))
+                   ((https://www.schemastore.org/clang-format.json . "/.clang-format")
+                    (https://www.schemastore.org/clangd.json        . "/clangd.yaml")
+                    (,empty-schema-path "/package.yaml"))
                    :completion t
                    :hover t)))
   (let ((my-eglot-server-programs

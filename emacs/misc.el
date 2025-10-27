@@ -103,9 +103,6 @@
          (some-window 'lru)
          (body-function . select-window))))
 
-(setq-default user-config-dir
-              (expand-file-name (file-name-directory user-init-file)))
-
 (setq-default backup-directory-alist
               `((".*" . ,(concat user-config-dir "var/backups/"))))
 

@@ -1,0 +1,10 @@
+-- -*- mode: haskell-cabal -*-
+
+repository hackage.haskell.org
+  url: http://hackage.haskell.org/
+
+remote-build-reporting: none
+
+upgrade-dependencies: True
+jobs: $ncpus
+overwrite-policy: always
