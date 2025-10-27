@@ -59,7 +59,7 @@ COMPONENT is a string like 'library' or 'executable foo'."
          (current-file-name (file-relative-name (buffer-file-name) project-root))
          (cabal-file (car (directory-files project-root t "\\`[^.#][A-Za-z0-9_.-]*\.cabal\\'")))
          (project-name (cabal--get-project-name)))
-    (when cabal-file
+    (when (and (stringp cabal-file) (file-regular-p cabal-file) cabal-file)
       (let ((components (cabal--parse-components cabal-file))
             (result nil))
         (dolist (comp components)
