@@ -179,23 +179,24 @@ This wrapper does two things:
   (eglot-autoshutdown t)
   (eglot-autoreconnect t)
   (eglot-extend-to-xref t)
+  (eglot-confirm-server-initiated-edits nil)
   (xref-backend-functions '(eglot-xref-backend xref-etags-backend))
   (tags-revert-without-query t)
   (large-file-warning-threshold nil)
   (eldoc-idle-delay 0.5)
   :config
-  (setq empty-schema-path (intern (concat user-config-dir "/empty-schema.json")))
   (setq-default eglot-workspace-configuration
-                `(:haskell
-                  (:formattingProvider "fourmolu"
-                                       :plugin
-                                       (:fourmolu (:config (:external t))
-                                                  :rename   (:config (:crossModule t))))
+                '(:haskell
+                  (:plugin
+                   (:fourmolu (:config (:external t))
+                              :rename   (:config (:crossModule t)))
+                   :formattingProvider "fourmolu")
                   :yaml
                   (:schemas
-                   ((https://www.schemastore.org/clang-format.json . "/.clang-format")
+                   ((https://www.schemastore.org/clang-format-21.x.json . "/.clang-format")
                     (https://www.schemastore.org/clangd.json        . "/clangd.yaml")
-                    (,empty-schema-path "/package.yaml"))
+                    (https://www.schemastore.org/github-workflow.json . "/.github/workflows/*.yaml"))
+                   :schemaStore (:enabled nil)
                    :completion t
                    :hover t)))
   (let ((my-eglot-server-programs
