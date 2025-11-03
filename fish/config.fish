@@ -58,7 +58,7 @@ function fish_prompt
 end
 
 function myyamlfix
-    set -l yaml_files (find . \( -name "*.yaml" -o -name ".*.yaml" -o -name "*.yml" -o -name ".*.yml" \) -type f -not -name ".hlint.yaml")
+    set -l yaml_files (find . \( -name "*.yaml" -o -name ".*.yaml" -o -name "*.yml" -o -name ".*.yml" \) -type f -not -name ".hlint.yaml" -not -path '*/node_modules/*')
     if test (count $yaml_files) -eq 0
         echo "No YAML files found."
         return 1
