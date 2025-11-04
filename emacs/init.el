@@ -446,7 +446,8 @@ This wrapper does two things:
   :hook ((php-mode . flymake-mode)))
 
 (use-package yaml-mode
-  :hook (yaml-mode . my-eglot-ensure-if-supported)
+  :hook ((yaml-mode . my-eglot-ensure-if-supported)
+         (yaml-mode . (lambda () (display-line-numbers-mode 1))))
   :mode (("\\.ya?ml\\'" . yaml-mode)
          ("/\\.clang-format\\'" . yaml-mode)
          ("/stack\\.yaml\\.lock\\'" . yaml-mode)))
