@@ -193,7 +193,9 @@ Otherwise, remove all matching strings and prepend TARGET if it's a string."
    (lambda (process-type)
      (if (eq process-type 'stack-ghci)
          "stack test --color always"
-       "cabal test --test-show-details=direct"))))
+       (let ((base "cabal test --test-show-details=direct"))
+         (if (file-regular-p (expand-file-name "cabal.project.dev" (projectile-project-root)))
+             (concat base " --project-file cabal.project.dev") base))))))
 
 
 (with-eval-after-load 'haskell-mode
