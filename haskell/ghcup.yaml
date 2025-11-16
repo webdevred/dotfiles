@@ -1,3 +1,6 @@
+url-source:
+- vanilla
+- prereleases
 key-bindings:
   down:
     KChar: "j"
