@@ -143,7 +143,7 @@ Specifically:
   "Force Eglot to stop managing this buffer if it's on the denylist."
   (when (and buffer-file-name
              (not (string= "cabal.project.local" (file-name-nondirectory buffer-file-name)))
-             (string-match-p "/cabal\\.project\\..*\\'" buffer-file-name)
+             (string-match-p "/cabal\\.project\\.*\\'" buffer-file-name)
              (functionp 'eglot--managed-mode-off)
              (functionp 'eglot-managed-p)
              (eglot-managed-p))
@@ -201,8 +201,9 @@ This wrapper does two things:
                    :hover t)))
   (let ((my-eglot-server-programs
          '(((c-mode c++-mode) . ("clangd"))
-           ((haskell-mode haskell-cabal-mode) . ("my_hls_wrapper"))
-           (fish-mode . ("fish-lsp" "start")))))
+           ((haskell-mode cabal-mode) . ("my_hls_wrapper"))
+           (fish-mode . ("fish-lsp" "start"))
+           (jbeam-mode . ("jbeam-lsp-server")))))
     (dolist (new my-eglot-server-programs)
       (let* ((new-modes (if (listp (car new)) (car new) (list (car new)))))
         (setq eglot-server-programs
@@ -410,6 +411,11 @@ This wrapper does two things:
   :custom-face
   (markdown-metadata-key-face ((t (:foreground "#ff55ff"))))
   (markdown-metadata-value-face ((t (:foreground "#ffaaff")))))
+
+(use-package cabal-mode
+  :hook (cabal-mode . eglot-ensure)
+  :mode (("\\.cabal\\'" . cabal-mode)
+         ("\\`\\cabal\\(.*\\)\\'" . cabal-mode)))
 
 (use-package jbeam-mode)
 
