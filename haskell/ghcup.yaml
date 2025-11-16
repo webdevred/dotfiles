@@ -1,0 +1,5 @@
+key-bindings:
+  down:
+    KChar: "j"
+  up:
+    KChar: "k"
