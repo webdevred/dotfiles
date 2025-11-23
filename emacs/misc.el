@@ -246,10 +246,10 @@
 (define-key windmove-mode-map (kbd "s-M-<up>") #'windmove-swap-states-up)
 (define-key windmove-mode-map (kbd "s-M-<down>") #'windmove-swap-states-down)
 
-(org-babel-do-load-languages
- 'org-babel-load-languages
- '((js . t)
-   (haskell . t)))
+;; (org-babel-do-load-languages
+;;  'org-babel-load-languages
+;;  '((js . t)
+;;    (haskell . t)))
 
 (defvar scratchpad-buffer "*scratch*"
   "Name of the scratchpad buffer.")
@@ -272,19 +272,19 @@
 (advice-add 'switch-to-buffer-other-window :around #'switch-to-buffer-check-scratchpad)
 (advice-add 'switch-to-buffer-other-frame :around #'switch-to-buffer-check-scratchpad)
 
-(define-generic-mode 'bnf-mode
-  nil
-  nil
-  '(("<[^>]+>" . font-lock-function-name-face)
-    ("::=" . font-lock-keyword-face)
-    ("\"[^\"]*\"" . font-lock-string-face)
-    ("'[^']*'" . font-lock-string-face))
-  '("\\.bnf\\'")
-  nil
-  "Simple BNF mode for syntax highlighting.")
+;; (define-generic-mode 'bnf-mode
+;;   nil
+;;   nil
+;;   '(("<[^>]+>" . font-lock-function-name-face)
+;;     ("::=" . font-lock-keyword-face)
+;;     ("\"[^\"]*\"" . font-lock-string-face)
+;;     ("'[^']*'" . font-lock-string-face))
+;;   '("\\.bnf\\'")
+;;   nil
+;;   "Simple BNF mode for syntax highlighting.")
 
-;; Register 'bnf' language with org-babel for highlighting
-(add-to-list 'org-src-lang-modes '("bnf" . bnf))
+;; ;; Register 'bnf' language with org-babel for highlighting
+;; (add-to-list 'org-src-lang-modes '("bnf" . bnf))
 
 (provide 'misc)
 ;;; misc.el ends here

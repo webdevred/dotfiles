@@ -252,6 +252,7 @@ This wrapper does two things:
 (use-package treemacs
   :custom
   (treemacs-no-png-images t)
+  (treemacs-follow-mode nil)
   (treemacs-eldoc-display 'detailed)
   :config
   (add-to-list 'treemacs-ignored-file-predicates #'treemacs-hide-boring-files)
@@ -417,7 +418,8 @@ This wrapper does two things:
   :mode (("\\.cabal\\'" . cabal-mode)
          ("\\`\\cabal\\(.*\\)\\'" . cabal-mode)))
 
-(use-package jbeam-mode)
+(use-package jbeam-mode
+  :hook (jbeam-mode . eglot-ensure))
 
 (use-package fish-mode
   :hook (fish-mode . my-eglot-ensure-if-supported)
