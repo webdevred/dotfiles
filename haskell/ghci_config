@@ -2,3 +2,7 @@
 :set prompt "λ> "
 :set -XOverloadedStrings
 :set editor vim
+:set -Wno-missing-export-lists
+:set -Wno-type-defaults
+:set -Wno-name-shadowing
+:set -fprint-bind-result
