@@ -193,7 +193,7 @@ Otherwise, remove all matching strings and prepend TARGET if it's a string."
    (lambda (process-type)
      (if (eq process-type 'stack-ghci)
          "stack test --color always"
-       (let ((base "cabal test --test-show-details=direct"))
+       (let ((base "cabal test --verbose=0 --test-show-details=direct"))
          (if (file-regular-p (expand-file-name "cabal.project.dev" (projectile-project-root)))
              (concat base " --project-file cabal.project.dev") base))))))
 
@@ -210,11 +210,11 @@ Otherwise, remove all matching strings and prepend TARGET if it's a string."
   )
 
 (setq haskell-process-args-stack-ghci '("--ghc-options" "-w")
-      haskell-process-show-debug-tips t
       haskell-doc-prettify-types t
       haskell-indentation-electric-flag t
       haskell-process-suggest-language-pragmas nil
       haskell-process-suggest-restart nil
-      haskell-process-prompt-restart nil)
+      haskell-process-prompt-restart nil
+      haskell-process-show-debug-tips nil)
 
 ;;; haskell-mode-git.el ends here
