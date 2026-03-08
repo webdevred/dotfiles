@@ -199,11 +199,18 @@ This wrapper does two things:
                    :schemaStore (:enabled nil)
                    :completion t
                    :hover t)))
-  (let ((my-eglot-server-programs
-         '(((c-mode c++-mode) . ("clangd"))
-           ((haskell-mode cabal-mode) . ("my_hls_wrapper"))
-           (fish-mode . ("fish-lsp" "start"))
-           (jbeam-mode . ("jbeam-lsp-server")))))
+  (let* ((expand-maybe
+          (lambda (p)
+            (if (and (stringp p)
+                     (not (string-prefix-p "/" p))
+                     (not (string-prefix-p "~" p)))
+                (expand-file-name p "~/.local/bin/")
+              p)))
+         (my-eglot-server-programs
+          `(((c-mode c++-mode) . ("clangd"))
+            ((haskell-mode haskell-cabal-mode) . (,(funcall expand-maybe "my_hls_wrapper")))
+            (fish-mode . ("fish-lsp" "start"))
+            (jbeam-mode . (,(funcall expand-maybe "jbeam-lsp-server"))))))
     (dolist (new my-eglot-server-programs)
       (let* ((new-modes (if (listp (car new)) (car new) (list (car new)))))
         (setq eglot-server-programs
