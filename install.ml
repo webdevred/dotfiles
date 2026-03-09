@@ -12,6 +12,9 @@ type dot_file =
 
 type action = Install | Uninstall | Configure
 
+let source_top_dir source =
+  match String.split_on_char '/' source with dir :: _ -> dir | [] -> source
+
 (* parse command line input *)
 let get_chosen_dotfiles args =
   let len = Array.length args in
@@ -154,7 +157,23 @@ let perform_action action maybe_chosen_sources cwd places =
   match action with
   | Install -> install cwd chosen_places
   | Uninstall -> uninstall chosen_places
-  | Configure -> () (* confugure chosen_dotfiles *)
+  | Configure ->
+      let seen = Hashtbl.create 8 in
+      List.iter
+        (fun place ->
+          let dir = source_top_dir place.source in
+          if not (Hashtbl.mem seen dir) then (
+            Hashtbl.add seen dir true ;
+            let configure_ml = cwd ^ "/" ^ dir ^ "/configure.ml" in
+            if Sys.file_exists configure_ml then (
+              let cmd =
+                Printf.sprintf
+                  "ocaml -I +unix -I +str unix.cma str.cma %s"
+                  configure_ml
+              in
+              Printf.printf "configuring %s\n%!" dir ;
+              ignore (Unix.system cmd) ) ) )
+        chosen_places
 
 let () =
   let cwd = Sys.getcwd () in
