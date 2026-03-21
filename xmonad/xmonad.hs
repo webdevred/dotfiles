@@ -98,29 +98,6 @@ excludeEmojis = filter isNotEmoji
     isNotEmoji code = not $ any (inEmojiRange $ ord code) emojiRanges
     inEmojiRange code (start, end) = code >= start && code <= end
 
-myXmobarPP :: PP
-myXmobarPP =
-  def
-    { ppSep = xmobarPink " | "
-    , ppTitleSanitize = xmobarStrip
-    , ppCurrent = xmobarPink . wrap "(" ")"
-    , ppVisible = xmobarPink . wrap "<" ">"
-    , ppHidden = xmobarMagenta
-    , ppUrgent = xmobarRed . wrap (xmobarYellow "!") (xmobarYellow "!")
-    , ppLayout = map toLower
-    , ppOrder = \[ws, l, _, wins] -> [ws, l, wins]
-    , ppExtras = [logTitles formatFocused formatUnfocused]
-    }
-  where
-    formatFocused = wrap "[" "]" . xmobarPink . ppWindow
-    formatUnfocused = wrap "[" "]" . xmobarMagenta . ppWindow
-    ppWindow =
-      map toLower . xmobarRaw . shorten 30 . excludeEmojis . untitledIfNull
-    xmobarMagenta = xmobarColor magenta ""
-    xmobarPink = xmobarColor pink ""
-    xmobarYellow = xmobarColor "#f1fa8c" ""
-    xmobarRed = xmobarColor "#ff5555" ""
-
 -- my preffered terminal
 myTerminal :: String
 myTerminal = "alacritty"
@@ -527,7 +504,20 @@ myLayouts =
 -- start picom with my config and set my background using wpc
 myStartup :: X ()
 myStartup = do
-  spawn "polybar top-big-screen"
+  bars <- liftIO readPolybarChoice
+  mapM_ (\bar -> spawn $ "polybar " ++ bar) bars
   spawnOnce "xset s off; xset s noblank; xset -dpms"
   spawnOnce "picom"
   spawnOnce "wpc -b"
+
+readPolybarChoice :: IO [String]
+readPolybarChoice = do
+  cfgDir <- getXdgDirectory XdgConfig "xmonad"
+  let path = cfgDir ++ "/polybar.txt"
+  result <- try (readFile path) :: IO (Either IOException String)
+  case result of
+    Right contents ->
+      let bars =
+            words . dropWhile (== ' ') . reverse . dropWhile (== '\n') . reverse $ contents
+       in if null bars then pure [] else pure bars
+    Left _ -> pure []
