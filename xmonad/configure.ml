@@ -5,6 +5,9 @@ open Unix
 let polybar_config = Unix.getenv "HOME" ^ "/.config/polybar/config.ini"
 let polybar_choice = Unix.getenv "HOME" ^ "/.config/xmonad/polybar.txt"
 
+(* open /dev/tty directly for input, bypassing whatever stdin is *)
+let tty = open_in "/dev/tty"
+
 (* parse [bar/name] sections from polybar config *)
 let parse_bars filename =
   let bar_re = Str.regexp "^\\[bar/\\([^]]+\\)\\]" in
@@ -84,7 +87,7 @@ let rec configure_loop bars selected =
   let nbars = List.length bars in
   Printf.printf "Select bars by index, d(elete) or c(ontinue) (0-%d, c, d): %!"
     (nbars - 1) ;
-  let input = input_line Stdlib.stdin in
+  let input = try input_line tty with End_of_file -> print_newline () ; "c" in
   match parse_action input nbars with
   | Error e ->
       Printf.printf "Error: %s\n" e ;
@@ -116,6 +119,7 @@ let () =
   let current = read_current () in
   print_bars bars current ;
   let selected = configure_loop bars current in
+  close_in tty ;
   if selected = [] then
     Printf.printf "No bars selected, polybar.txt not updated.\n"
   else (
