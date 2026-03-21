@@ -1,8 +1,12 @@
+key-bindings:
+  down:
+    Key:
+      KChar: j
+    Mods: []
+  up:
+    Key:
+      KChar: k
+    Mods: []
 url-source:
 - vanilla
 - prereleases
-key-bindings:
-  down:
-    KChar: "j"
-  up:
-    KChar: "k"
