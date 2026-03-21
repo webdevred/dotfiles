@@ -87,7 +87,15 @@ let set_permissions source current_mode maybe_mode =
 
 let rec link_dotfile please_symlink maybe_mode source destination =
   let file_stat = stat source in
-  if file_stat.st_kind == S_DIR then
+  if file_stat.st_kind == S_DIR && please_symlink then (
+    (* symlink the whole directory in one shot *)
+    if not (Sys.file_exists destination) then (
+      let dest_dir = Filename.dirname destination in
+      if not (Sys.file_exists dest_dir) then create_dir dest_dir ;
+      Printf.printf "symlinking dir %s %s\n" source destination ;
+      symlink source destination ) )
+  else if file_stat.st_kind == S_DIR then
+    (* hardlink mode: recurse and hardlink individual files *)
     let files = Sys.readdir source in
     for i = 0 to Array.length files - 1 do
       let single_file = files.(i) in
