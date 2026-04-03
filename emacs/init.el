@@ -408,7 +408,7 @@ This wrapper does two things:
   (setq-local show-trailing-whitespace t))
 
 (use-package markdown-mode
-  :hook ((markdown-mode . (lambda () (my-jbeam-try-load-mode 'jbfl-mode)))
+  :hook ((markdown-mode . my-jbfl-try-load)
          (markdown-mode . my-subword)
          (markdown-mode . my-eglot-ensure-if-supported))
   :mode (("\\.md\\'" . markdown-mode)

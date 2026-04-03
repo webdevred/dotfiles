@@ -201,21 +201,18 @@
      (indent-region (point-min) (point-max)))))
 (global-set-key (kbd "C-c r") (lambda () (interactive) (load user-init-file) ) )
 
-(defun my-jbeam-try-load-mode (mode)
-  "Load MODE jbeam modes if we are in jbeam-edit project."
-  (let* ((project-root (ignore-errors (projectile-project-root)))
-         (project-name (and project-root (projectile-project-name)))
-         (elisp-dir (and project-root (concat project-root "/editors"))))
-    (when (and (string= project-name "jbeam-edit")
-               elisp-dir
-               (file-directory-p elisp-dir))
-      (progn
-        (add-to-list 'load-path elisp-dir)
-        (require mode)
-        (when (eq major-mode 'fundamental-mode) (funcall mode))))))
+(defun my-jbfl-try-load ()
+  "Load and activate jbfl-mode from the jbeam-edit project's editors directory."
+  (when-let* ((project-root (ignore-errors (projectile-project-root)))
+              (_ (string= (projectile-project-name) "jbeam_edit"))
+              (elisp-dir (concat project-root "/editors"))
+              (_ (file-directory-p elisp-dir)))
+    (cl-pushnew elisp-dir load-path :test #'string=)
+    (require 'jbfl-mode nil t)
+    (jbfl-mode)))
 
 (add-to-list 'auto-mode-alist
-             '("\\.jbfl\\'" . (lambda () (my-jbeam-try-load-mode 'jbfl-mode))))
+             '("\\.jbfl\\'" . (lambda () (my-jbfl-try-load))))
 
 ;; remove ugly bars
 (menu-bar-mode -1)
