@@ -203,12 +203,13 @@
 
 (defun my-jbfl-try-load ()
   "Load and activate jbfl-mode from the jbeam-edit project's editors directory."
-  (when-let* ((project-root (ignore-errors (projectile-project-root)))
-              (_ (string-match-p "\\`jbeam[-_]edit\\'" (projectile-project-name)))
-              (elisp-dir (concat project-root "/editors"))
-              (_ (file-directory-p elisp-dir)))
-    (cl-pushnew elisp-dir load-path :test #'string=)
-    (require 'jbfl-mode nil t)
+  (progn
+    (when-let* ((project-root (ignore-errors (projectile-project-root)))
+                (_ (string-match-p "\\`jbeam[-_]edit\\'" (projectile-project-name)))
+                (elisp-dir (concat project-root "/editors"))
+                (_ (file-directory-p elisp-dir)))
+      (cl-pushnew elisp-dir load-path :test #'string=)
+      (require 'jbfl-mode nil t))
     (jbfl-mode)))
 
 (add-to-list 'auto-mode-alist
