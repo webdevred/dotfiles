@@ -408,7 +408,7 @@ This wrapper does two things:
   (setq-local show-trailing-whitespace t))
 
 (use-package markdown-mode
-  :hook ((markdown-mode . my-jbfl-try-load)
+  :hook ((markdown-mode . (lambda () (my-jbfl-try-load nil)))
          (markdown-mode . my-subword)
          (markdown-mode . my-eglot-ensure-if-supported))
   :mode (("\\.md\\'" . markdown-mode)
