@@ -16,14 +16,15 @@ emacs:.config/emacs:hardlink
 git:.config/git
 misc/vimrc:.vimrc
 misc/gdbinit:.config/gdb/gdbinit
-
-# haskell development
 misc/clangd.yaml:.config/clang/clangd.yaml
 misc/marksman.toml:.config/marksman/marksman.toml
+
+# haskell development
 haskell/ghcup.yaml:.ghcup/config.yaml
 haskell/ghci_config:.ghci::700
 haskell/my_hls_wrapper.sh:.local/bin/my_hls_wrapper::700
 haskell/cabal_config:.config/cabal/config
+haskell/stack-config.yaml:.stack/config.yaml
 haskell/hpack-and-format.sh:.local/bin/hpack-and-format::700
 
 # misc
