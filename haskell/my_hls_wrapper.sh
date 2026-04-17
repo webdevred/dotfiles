@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 set -euo pipefail
 
@@ -10,6 +10,7 @@ fi
 ghc_version=$(ghc --numeric-version)
 echo "GHC version: $ghc_version" >&2
 
+base_path=""
 if [ -d "$HOME/.local/state/cabal/store" ]; then
   base_path="$HOME/.local/state/cabal"
 elif [ -d "$HOME/.cabal/store" ]; then
@@ -18,7 +19,11 @@ else
   echo "Warning: Could not find Cabal store directory." >&2
 fi
 
-hspec_path=$(find "$base_path/store/ghc-$ghc_version" -type f -name hspec-discover | head -n 1 || true)
+if [ -n "$base_path" ]; then
+  hspec_path=$(find "$base_path/store/ghc-$ghc_version" -type f -name hspec-discover | head -n 1 || true)
+else
+  hspec_path=""
+fi
 
 if [ -n "$hspec_path" ] && [ -x "$hspec_path" ]; then
   echo "Found hspec-discover at: $hspec_path" >&2

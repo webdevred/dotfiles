@@ -1,11 +1,13 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-if ! hpack -f --canonical >/dev/null; then
-  echo "Problem with hpack"
+set -euo pipefail
+
+if ! hpack_output=$(hpack -f --canonical); then
+  echo "Problem with hpack" >&2
   exit 1
 fi
 
-cabal_file=$(hpack -f --canonical | awk '{ print $2 }')
+cabal_file=$(echo "$hpack_output" | awk '{ print $2 }')
 
 comment_block=$(awk '/^-- This file has been generated from package.yaml by hpack version/ { inBlock=1 }
                     inBlock && /^--/ { print; next }
