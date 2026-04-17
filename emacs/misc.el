@@ -147,7 +147,7 @@
       (let ((mode (assoc-default base auto-mode-alist 'string-match)))
         (when mode
           (funcall mode))))))
-(add-hook 'find-file-hook 'set-mode-for-backupish-files)
+(add-hook 'find-file-hook #'set-mode-for-backupish-files)
 
 ;; Major mode hooks
 (add-hook 'emacs-lisp-mode-hook
@@ -169,7 +169,7 @@
         (compilation-environment '("LANG=C")))
     (ansi-color-apply-on-region (point-min) (point-max))))
 
-(add-hook 'compilation-filter-hook 'colorize-compilation-buffer)
+(add-hook 'compilation-filter-hook #'colorize-compilation-buffer)
 
 
 ;; set up column numbers
@@ -201,16 +201,15 @@
      (indent-region (point-min) (point-max)))))
 (global-set-key (kbd "C-c r") (lambda () (interactive) (load user-init-file) ) )
 
-(defun my-jbfl-try-load (load)
+(defun my-jbfl-try-load (activate)
   "Load and activate jbfl-mode from the jbeam-edit project's editors directory."
-  (progn
-    (when-let* ((project-root (ignore-errors (projectile-project-root)))
-                (_ (string-match-p "\\`jbeam[-_]edit\\'" (projectile-project-name)))
-                (elisp-dir (concat project-root "/editors"))
-                (_ (file-directory-p elisp-dir)))
-      (cl-pushnew elisp-dir load-path :test #'string=)
-      (require 'jbfl-mode nil t))
-    (if load (jbfl-mode))))
+  (when-let* ((project-root (ignore-errors (projectile-project-root)))
+              (_ (string-match-p "\\`jbeam[-_]edit\\'" (projectile-project-name)))
+              (elisp-dir (concat project-root "/editors"))
+              (_ (file-directory-p elisp-dir)))
+    (cl-pushnew elisp-dir load-path :test #'string=)
+    (require 'jbfl-mode nil t)
+    (when activate (jbfl-mode))))
 
 (add-to-list 'auto-mode-alist
              '("\\.jbfl\\'" . (lambda () (my-jbfl-try-load t))))

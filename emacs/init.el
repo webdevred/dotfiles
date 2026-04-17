@@ -415,7 +415,6 @@ This wrapper does two things:
          ("\\.markdown\\'" . markdown-mode))
   :custom
   (markdown-fontify-code-blocks-natively t)
-  :config
   :custom-face
   (markdown-metadata-key-face ((t (:foreground "#ff55ff"))))
   (markdown-metadata-value-face ((t (:foreground "#ffaaff")))))
