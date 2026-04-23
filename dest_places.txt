@@ -28,6 +28,7 @@ haskell/stack-config.yaml:.stack/config.yaml
 haskell/hpack-and-format.sh:.local/bin/hpack-and-format::700
 
 # misc
+bash/bashrc.sh:.bashrc
 misc/yamlfix.toml:.config/yamlfix/config.toml:hardlink
 misc/btop.conf:.config/btop/btop.conf:hardlink
 
