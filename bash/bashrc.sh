@@ -60,9 +60,12 @@ git-remove-orphaned-branches() {
   fi
 }
 
-if declare -f __git_ps1 >/dev/null 2>&1; then
+if declare -f __git_ps1 >/dev/null 2>&1 \
+   && ! declare -f _orig___git_ps1 >/dev/null 2>&1; then
   eval "_orig_$(declare -f __git_ps1)"
   __git_ps1() { _orig___git_ps1 "$@" | tr -d '\0'; }
 fi
 
-PS1='\[\033]0;$TITLEPREFIX:$PWD\007\]\n\[\033[38;2;255;170;255m\]\w\[\033[36m\]$(__git_ps1)\[\033[0m\] $ '
+declare -f __git_ps1 >/dev/null 2>&1 || __git_ps1() { :; }
+
+PS1='\[\033]0;$TITLEPREFIX:$PWD\007\]\[\033[38;2;255;170;255m\]\w\[\033[36m\]$(__git_ps1)\[\033[0m\] $ '
