@@ -60,6 +60,10 @@ git-remove-orphaned-branches() {
   fi
 }
 
+alias ncdu='ncdu -x'
+alias df='df -x efivarfs -x tmpfs -x zfs -x devtmpfs -hT'
+alias lsblk='lsblk -e 7'
+
 if declare -f __git_ps1 >/dev/null 2>&1 \
    && ! declare -f _orig___git_ps1 >/dev/null 2>&1; then
   eval "_orig_$(declare -f __git_ps1)"
