@@ -3,6 +3,7 @@
 # xmonad
 xmonad:.config/xmonad
 polybar/config.ini:.config/polybar/config.ini
+polybar/polybar-zfs.sh:.config/polybar/polybar-zfs.sh::0700
 xmobar:.config/xmobar
 picom:.config/picom
 rofi:.config/rofi
