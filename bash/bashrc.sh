@@ -1,3 +1,6 @@
+[[ -r /usr/share/bash-completion/bash_completion ]] && \
+    . /usr/share/bash-completion/bash_completion
+
 _git_default_branch() {
   git -C "$PWD" symbolic-ref refs/remotes/origin/HEAD 2>/dev/null |
     sed 's|refs/remotes/origin/||' ||
@@ -69,6 +72,17 @@ if declare -f __git_ps1 >/dev/null 2>&1 \
   eval "_orig_$(declare -f __git_ps1)"
   __git_ps1() { _orig___git_ps1 "$@" | tr -d '\0'; }
 fi
+
+HISTSIZE=100000
+HISTFILESIZE=200000
+HISTCONTROL=ignoredups:erasedups
+HISTTIMEFORMAT="%F %T  "
+shopt -s histappend checkwinsize globstar
+PROMPT_COMMAND="history -a; history -n; ${PROMPT_COMMAND}"
+
+export LESS="-N -M -R --shift 5"
+export EDITOR="vi"
+export MANPAGER='less -R --use-color -Dd+r -Du+b'
 
 declare -f __git_ps1 >/dev/null 2>&1 || __git_ps1() { :; }
 
