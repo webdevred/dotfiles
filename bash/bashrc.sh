@@ -63,6 +63,15 @@ git-remove-orphaned-branches() {
   fi
 }
 
+kill_my_procs() {
+  if [[ -z $1 ]]; then
+    echo "please supply software to kill processes for"
+    return 1
+  fi
+
+  ps faux | grep $1 | awk '{ print $2 }' | xargs kill -9 2>/dev/null
+}
+
 alias ncdu='ncdu -x'
 alias df='df -x efivarfs -x tmpfs -x zfs -x devtmpfs -hT'
 alias lsblk='lsblk -e 7'
