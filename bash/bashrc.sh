@@ -1,5 +1,5 @@
-[[ -r /usr/share/bash-completion/bash_completion ]] && \
-    . /usr/share/bash-completion/bash_completion
+[[ -r /usr/share/bash-completion/bash_completion ]] &&
+  . /usr/share/bash-completion/bash_completion
 
 _git_default_branch() {
   git -C "$PWD" symbolic-ref refs/remotes/origin/HEAD 2>/dev/null |
@@ -76,8 +76,8 @@ alias ncdu='ncdu -x'
 alias df='df -x efivarfs -x tmpfs -x zfs -x devtmpfs -hT'
 alias lsblk='lsblk -e 7'
 
-if declare -f __git_ps1 >/dev/null 2>&1 \
-   && ! declare -f _orig___git_ps1 >/dev/null 2>&1; then
+if declare -f __git_ps1 >/dev/null 2>&1 &&
+  ! declare -f _orig___git_ps1 >/dev/null 2>&1; then
   eval "_orig_$(declare -f __git_ps1)"
   __git_ps1() { _orig___git_ps1 "$@" | tr -d '\0'; }
 fi
@@ -92,6 +92,7 @@ PROMPT_COMMAND="history -a; history -n; ${PROMPT_COMMAND}"
 export LESS="-N -M -R --shift 5"
 export EDITOR="vi"
 export MANPAGER='less -R --use-color -Dd+r -Du+b'
+export PATH="~/.local/bin:$PATH"
 
 declare -f __git_ps1 >/dev/null 2>&1 || __git_ps1() { :; }
 
