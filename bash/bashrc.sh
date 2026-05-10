@@ -1,63 +1,45 @@
 [[ -r /usr/share/bash-completion/bash_completion ]] &&
   . /usr/share/bash-completion/bash_completion
 
-_git_default_branch() {
-  git -C "$PWD" symbolic-ref refs/remotes/origin/HEAD 2>/dev/null |
-    sed 's|refs/remotes/origin/||' ||
-    git -C "$PWD" remote show origin 2>/dev/null |
-    awk '/HEAD branch/ {print $NF}'
-}
-
-git-list-orphaned-branches() {
-  git -C "$PWD" rev-parse --is-inside-work-tree &>/dev/null || {
-    echo "Not a git repo: $PWD"
-    return 1
-  }
-
-  local default_branch
-  default_branch=$(_git_default_branch)
-  [[ -z "$default_branch" ]] && {
-    echo "Could not determine default branch." >&2
-    return 1
-  }
-
-  git -C "$PWD" fetch --prune
-
-  local remote_branches
-  remote_branches=$(git -C "$PWD" branch -r | awk '{print $1}')
-
-  local branch
-  git -C "$PWD" branch -vv | grep origin |
-    awk '{print $1}' |
-    while IFS= read -r branch; do
-      if ! echo "$remote_branches" | grep -qF "$branch"; then
-        if [[ -n $(git -C "$PWD" diff "origin/${default_branch}...${branch}" -- .) ]]; then
-          echo "$branch"
-        fi
-      fi
-    done
-}
-
 git-remove-orphaned-branches() {
   git -C "$PWD" rev-parse --is-inside-work-tree &>/dev/null || {
-    echo "Not a git repo: $PWD"
-    return 1
+    echo "Not a git repo: $PWD" >&2; return 1
   }
 
-  local branches
-  branches=$(git-list-orphaned-branches)
+  local dry=0
+  [[ "$1" == "-n" || "$1" == "--dry-run" ]] && dry=1
 
-  if [[ -z "$branches" ]]; then
-    echo "No orphaned local branches with changes under $PWD."
+  local default
+  default=$(git -C "$PWD" symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null \
+            | sed 's|^origin/||')
+  [[ -z "$default" ]] && { echo "Could not determine default branch." >&2; return 1; }
+
+  git -C "$PWD" fetch --prune --quiet
+
+  local orphans=() branch
+  while IFS= read -r branch; do
+    [[ -z "$branch" || "$branch" == "$default" ]] && continue
+    # has commits not reachable from origin/default?
+    if [[ -n $(git -C "$PWD" log "origin/${default}..${branch}" --oneline 2>/dev/null) ]]; then
+      orphans+=("$branch")
+    fi
+  done < <(git -C "$PWD" for-each-ref \
+             --format='%(refname:short) %(upstream:track)' refs/heads \
+           | awk '/\[gone\]/ {print $1}')
+
+  if (( ${#orphans[@]} == 0 )); then
+    echo "No orphaned local branches with unpushed changes."
     return 0
   fi
 
-  echo "Orphaned branches with unpushed changes under $PWD to delete:"
-  echo "${branches//^ /}"
-  printf '\nConfirm deletion? [y/N] '
+  printf 'Orphaned branches with unpushed changes:\n'
+  printf '  %s\n' "${orphans[@]}"
+  (( dry )) && return 0
+
+  printf '\nDelete these? [y/N] '
   read -r confirm
   if [[ "$confirm" =~ ^[Yy]$ ]]; then
-    echo "$branches" | xargs git -C "$PWD" branch -D
+    git -C "$PWD" branch -D "${orphans[@]}"
   else
     echo "Aborted."
   fi
