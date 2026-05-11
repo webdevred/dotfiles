@@ -43,6 +43,7 @@ import XMonad.Util.Run (runProcessWithInput)
 import XMonad.Util.SpawnOnce
 import XMonad.Util.WindowProperties (getProp32s)
 
+import XMonad.Hooks.FloatConfigureReq
 import Data.ByteString.Lazy qualified as BL
 import Data.Map qualified as Map
 import Data.Text qualified as T (unpack)
@@ -457,7 +458,7 @@ myConfig =
     , focusFollowsMouse = False
     , startupHook = myStartup <+> startupHook def
     , manageHook = myManageHook <+> manageHook def
-    , handleEventHook = handleEventHook def
+    , handleEventHook = fixSteamFlicker <+> fullscreenEventHook
     , layoutHook = avoidStruts $ smartBorders myLayouts
     , keys = myKeys
     }
