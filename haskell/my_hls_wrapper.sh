@@ -33,12 +33,14 @@ else
   echo "Warning: hspec-discover not found for GHC $ghc_version. Continuing without it." >&2
 fi
 
-hls_bin="$(which haskell-language-server)"
+export PATH="$HOME/.local/bin:$PATH"
 
+# Don't let `set -e` kill the script before we can print our own error.
+hls_bin="$(command -v haskell-language-server || true)"
 echo "PATH is now: $PATH" >&2
 export MY_HLS_WRAPPER=1
 
-if [[ -n $hls_bin ]]; then
+if [ -n "$hls_bin" ]; then
   if [ -t 0 ]; then
     "$hls_bin" -d >lsp_log 2>&1
     echo "Saved errors lsp_log" >&2
