@@ -1,7 +1,6 @@
 #!/bin/sh
 SELF_DIR="$(cd "$(dirname "$0")" && pwd)"
 
-# Bygg om PATH utan wrapperns egen katalog
 NEW_PATH=$(echo "$PATH" | tr ':' '\n' | grep -vFx "$SELF_DIR" | tr '\n' ':')
 REAL_CABAL=$(PATH="$NEW_PATH" command -v cabal)
 
