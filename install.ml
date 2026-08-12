@@ -74,7 +74,13 @@ let dotfile_is_chosen chosen place =
   List.exists matches chosen
 
 (* logic for doing installation of dotfiles *)
-let create_dir dir = if not (Sys.file_exists dir) then Sys.mkdir dir 0o700
+(* Destinations nest deeper than their parents exist on a fresh machine,
+   .local/bin being the usual one. *)
+let rec create_dir dir =
+  if not (Sys.file_exists dir) then (
+    let parent = Filename.dirname dir in
+    if not (String.equal parent dir) then create_dir parent ;
+    Sys.mkdir dir 0o700 )
 
 let set_permissions source current_mode maybe_mode =
   match maybe_mode with
