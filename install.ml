@@ -98,11 +98,14 @@ let rec link_dotfile please_symlink maybe_mode source destination =
     let files = Sys.readdir source in
     for i = 0 to Array.length files - 1 do
       let single_file = files.(i) in
+      (* Editor droppings and vendored checkouts are skipped, but ordinary
+         dotfiles such as .dir-locals.el are the point of the repo. *)
       if
         not
-          ( String.starts_with single_file ~prefix:"."
-          || String.starts_with single_file ~prefix:"#"
-          || String.ends_with single_file ~suffix:"~" )
+          ( String.starts_with single_file ~prefix:"#"
+          || String.starts_with single_file ~prefix:".#"
+          || String.ends_with single_file ~suffix:"~"
+          || String.equal single_file ".git" )
       then
         link_dotfile please_symlink maybe_mode
           (source ^ "/" ^ single_file)
