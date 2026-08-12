@@ -204,7 +204,13 @@ let perform_action action maybe_chosen_sources cwd places =
                   configure_ml
               in
               Printf.printf "configuring %s\n%!" dir ;
-              ignore (Unix.system cmd) ) ) )
+              match Unix.system cmd with
+              | Unix.WEXITED 0 -> ()
+              | Unix.WEXITED code ->
+                  Printf.eprintf "configuring %s failed with exit code %d\n%!"
+                    dir code
+              | Unix.WSIGNALED _ | Unix.WSTOPPED _ ->
+                  Printf.eprintf "configuring %s was killed\n%!" dir ) ) )
         chosen_places
 
 let () =
