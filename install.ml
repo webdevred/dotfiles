@@ -20,7 +20,7 @@ let get_chosen_dotfiles args =
   let len = Array.length args in
   if len > 2 then Some (Array.to_list (Array.sub args 2 (len - 2))) else None
 
-let get_choosen_action args =
+let get_chosen_action args =
   let len = Array.length args in
   if len >= 2 then
     match Array.get args 1 with
@@ -45,12 +45,13 @@ let parse_mode maybe_mode =
 (* parse the lines in dest file *)
 let line_to_dot_file s =
   let home = Unix.getenv "HOME" in
-  let list = String.split_on_char ':' s in
-  let source = List.nth list 0 in
-  let destination = home ^ "/" ^ List.nth list 1 in
-  let symlink = should_symlink (List.nth_opt list 2) in
-  let mode = parse_mode (List.nth_opt list 3) in
-  {source; destination; mode; symlink}
+  match String.split_on_char ':' s with
+  | source :: dest :: rest ->
+      let destination = home ^ "/" ^ dest in
+      let symlink = should_symlink (List.nth_opt rest 0) in
+      let mode = parse_mode (List.nth_opt rest 1) in
+      {source; destination; mode; symlink}
+  | _ -> failwith (Printf.sprintf "malformed line in dest_places.txt: %s" s)
 
 (* skip comments lines *)
 let shouldnt_skip_line str =
@@ -187,5 +188,5 @@ let () =
   let cwd = Sys.getcwd () in
   let all_places = places in
   let chosen_dotfiles = get_chosen_dotfiles Sys.argv in
-  let action = get_choosen_action Sys.argv in
+  let action = get_chosen_action Sys.argv in
   perform_action action chosen_dotfiles cwd all_places
