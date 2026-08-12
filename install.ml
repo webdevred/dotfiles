@@ -1,6 +1,5 @@
 #!/usr/bin/env -S ocaml -I +unix -I +str unix.cma str.cma
 
-open Str
 open Unix
 
 (* file we store dest places in *)
@@ -65,15 +64,14 @@ let places =
   |> List.filter shouldnt_skip_line
   |> List.map line_to_dot_file
 
+(* Match the whole source or its top directory, never a substring: "haskell"
+   selects every haskell/* entry, but a stray "a" selects nothing. *)
 let dotfile_is_chosen chosen place =
-  let string_contains haystack needle =
-    try
-      let re = Str.regexp_string needle in
-      ignore (Str.search_forward re haystack 0) ;
-      true
-    with Not_found -> false
+  let matches name =
+    String.equal place.source name
+    || String.equal (source_top_dir place.source) name
   in
-  List.exists (fun x -> string_contains place.source x) chosen
+  List.exists matches chosen
 
 (* logic for doing installation of dotfiles *)
 let create_dir dir = if not (Sys.file_exists dir) then Sys.mkdir dir 0o700
@@ -134,27 +132,43 @@ let install cwd places =
   List.iter do_install places
 
 (* logic for uninstallation of dotfiles *)
+let confirm question =
+  Printf.printf "%s [y/N] %!" question ;
+  try
+    match String.lowercase_ascii (String.trim (input_line Stdlib.stdin)) with
+    | "y" | "yes" -> true
+    | _ -> false
+  with End_of_file -> false
+
+(* A symlink is ours alone, so it goes without asking. A real directory is
+   shared with whatever the program writes there itself, such as elpa/ and
+   eln-cache/ under .config/emacs, so that one needs a yes. *)
 let uninstall places =
   let rec rmrf path =
-    match Sys.is_directory path with
-    | true ->
+    match (Unix.lstat path).st_kind with
+    | Unix.S_DIR ->
         Sys.readdir path
         |> Array.iter (fun name -> rmrf (Filename.concat path name)) ;
         Unix.rmdir path
-    | false -> Sys.remove path
+    | _ -> Sys.remove path
   in
-  let rec remove_dotfile path =
+  let remove_dotfile path =
     try
-      let kind = (Unix.lstat path).st_kind in
-      match kind with Unix.S_DIR -> rmrf path | _ -> Unix.unlink path
+      match (Unix.lstat path).st_kind with
+      | Unix.S_DIR ->
+          if
+            confirm
+              (Printf.sprintf "delete %s and everything inside it?" path)
+          then (
+            Printf.printf "uninstalling %s\n" path ;
+            rmrf path )
+          else Printf.printf "skipping %s\n" path
+      | _ ->
+          Printf.printf "uninstalling %s\n" path ;
+          Unix.unlink path
     with Unix.Unix_error (Unix.ENOENT, _, _) -> ()
   in
-  let do_uninstall dotfile =
-    let dest = dotfile.destination in
-    Printf.printf "uninstalling %s\n" dest ;
-    remove_dotfile dest
-  in
-  List.iter do_uninstall places
+  List.iter (fun dotfile -> remove_dotfile dotfile.destination) places
 
 (* entry *)
 let perform_action action maybe_chosen_sources cwd places =
