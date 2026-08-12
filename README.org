@@ -41,13 +41,23 @@ sudo apt install xmonad xmobar libghc-xmonad-dev libghc-aeson-dev alacritty fish
 
 ** Installation
 
-To install the configuration files, run:
+To install every configuration file, run:
 
 #+begin_src bash
-./install.sh
+./install.ml
 #+end_src
 
-or use the new install.ml program (work in progress) which will eventually replace install.sh.
+The script runs through its shebang, so there is no build step. To act on a single
+directory, pass an action and a name. The action is a bare letter, not a flag:
+
+#+begin_src bash
+./install.ml i emacs   # install only emacs
+./install.ml u emacs   # uninstall emacs
+./install.ml c emacs   # run the configure script for emacs
+#+end_src
+
+Which file goes where is defined in ~dest_places.txt~, one entry per line in the format
+~src:dest[:symlink|hardlink][:chmod]~, where ~dest~ is relative to ~$HOME~.
 
 ** Xmobar Panels
 
@@ -92,5 +102,3 @@ I include fish-mode and vimrc-mode in Emacs because sometimes I need to edit Vim
 
 - I avoid initializing Git repositories directly in my home directory to keep it clean and uncluttered. Instead, all config files are managed inside this dotfiles repository, and symlinked from there to their appropriate locations (mostly under ~/.config/). This setup allows easy version control, centralized management, and a tidy home directory.
 - Emacs configuration, along with all other software configurations, is kept organized in separate folders within this repository for clarity and maintainability.
-
-- The install.ml script is a future plan to replace install.sh and unify installation logic.
