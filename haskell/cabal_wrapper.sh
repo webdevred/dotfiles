@@ -24,7 +24,9 @@ for a in "$@"; do
   args+=("$a")
 done
 
-if [ "$has_project_file" -eq 0 ] && [[ -f "$CABAL_PROJECT_DEV" ]]; then
+if [ "$has_project_file" -eq 0 ] &&
+  [[ -f "$CABAL_PROJECT_DEV" ]] &&
+  "$REAL_CABAL" "${args[0]}" "--help" 2>&1 | grep -qE -- "--project-file"; then
   args+=("--project-file=${CABAL_PROJECT_DEV}")
 fi
 
