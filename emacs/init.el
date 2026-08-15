@@ -187,6 +187,7 @@ This wrapper does two things:
   :config
   (setq-default eglot-workspace-configuration
                 '(:haskell
+                  (:sessionLoading "multipleComponents")
                   (:plugin
                    (:fourmolu (:config (:external t))
                               :rename   (:config (:crossModule t)))
@@ -224,6 +225,7 @@ This wrapper does two things:
   :bind (:map eglot-mode-map
               ("C-c a" . eglot-code-actions)
               ("C-c f" . eglot-format-buffer)
+              ("C-c g" . xref-find-references)
               ("M-."   . xref-find-definitions)
               ("M-,"   . xref-go-back)))
 
