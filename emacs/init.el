@@ -142,8 +142,11 @@ Specifically:
 (defun eglot-unmanage-buffer ()
   "Force Eglot to stop managing this buffer if it's on the denylist."
   (when (and buffer-file-name
-             (not (string= "cabal.project.local" (file-name-nondirectory buffer-file-name)))
-             (string-match-p "/cabal\\.project\\.*\\'" buffer-file-name)
+             (or (and (string-match-p "/cabal\\.project\\..+\\'" buffer-file-name)
+                      (not (member (file-name-nondirectory buffer-file-name)
+                                   '("cabal.project" "cabal.project.local"
+                                     "cabal.project.freeze" "cabal.project.local.freeze"))))
+                 (string-match-p "\\(?:/\\.cabal/config\\|/cabal/config\\|/cabal_config\\)\\'" buffer-file-name))
              (functionp 'eglot--managed-mode-off)
              (functionp 'eglot-managed-p)
              (eglot-managed-p))
