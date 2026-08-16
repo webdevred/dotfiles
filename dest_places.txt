@@ -13,7 +13,7 @@ alacritty:.config/alacritty
 fish:.config/fish
 
 # developing & debugging
-emacs:.config/emacs:hardlink
+emacs:.config/emacs
 git:.config/git
 misc/vimrc:.vimrc
 misc/gdbinit:.config/gdb/gdbinit
