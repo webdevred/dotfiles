@@ -190,11 +190,11 @@ This wrapper does two things:
   :config
   (setq-default eglot-workspace-configuration
                 '(:haskell
-                  (:sessionLoading "multipleComponents")
-                  (:plugin
+                  (:sessionLoading "multipleComponents"
+                   :formattingProvider "fourmolu"
+                   :plugin
                    (:fourmolu (:config (:external t))
-                              :rename   (:config (:crossModule t)))
-                   :formattingProvider "fourmolu")
+                              :rename   (:config (:crossModule t))))
                   :yaml
                   (:schemas
                    ((https://www.schemastore.org/clang-format-21.x.json . "/.clang-format")
