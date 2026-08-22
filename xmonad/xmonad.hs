@@ -503,10 +503,25 @@ myLayouts =
 myStartup :: X ()
 myStartup = do
   bars <- liftIO readPolybarChoice
-  mapM_ (\bar -> spawn $ "polybar " ++ bar) bars
+  mapM_ (spawn . polybarCommand) bars
   spawnOnce "xset s off; xset s noblank; xset -dpms"
   spawnOnce "picom"
   spawnOnce "wpc -b"
+
+-- per-machine mountpoints/wifi presence live in polybar.env, sourced by the
+-- shell before polybar starts so ${env:...} in config.ini picks them up.
+-- A failed launch (e.g. a config.ini parse error) is otherwise silent, so
+-- surface it via xmessage instead of just a missing bar.
+polybarCommand :: String -> String
+polybarCommand bar =
+  ". $HOME/.config/xmonad/polybar.env 2>/dev/null; "
+    ++ "err=$(polybar "
+    ++ bar
+    ++ " 2>&1 >/dev/null); "
+    ++ "code=$?; "
+    ++ "[ \"$code\" -eq 0 ] || xmessage \"polybar "
+    ++ bar
+    ++ " failed ($code): $err\""
 
 readPolybarChoice :: IO [String]
 readPolybarChoice = do
