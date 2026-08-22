@@ -165,7 +165,7 @@ let write_choice path items =
 
 (* print items with indexes, marking currently selected ones *)
 let print_items label items selected =
-  Printf.printf "Available %s:\n" label ;
+  Printf.printf "\nAvailable %s:\n" label ;
   List.iteri
     (fun i item ->
       let marker = if List.mem item selected then " *" else "" in
@@ -329,7 +329,7 @@ let write_env_file path vars =
         vars )
 
 let prompt_default label default =
-  Printf.printf "\n%s [%s] (c to keep, d to clear): %!" label default ;
+  Printf.printf "%s [%s] (c to keep, d to clear): %!" label default ;
   let input =
     try String.trim (input_line tty)
     with End_of_file -> print_newline () ; ""
@@ -353,7 +353,7 @@ let has_wireless_interface () =
 
 let prompt_yn label default_yes =
   let hint = if default_yes then "Y/n" else "y/N" in
-  Printf.printf "\n%s (%s): %!" label hint ;
+  Printf.printf "%s (%s): %!" label hint ;
   let input =
     try String.trim (String.lowercase_ascii (input_line tty))
     with End_of_file -> print_newline () ; ""
@@ -364,11 +364,19 @@ let prompt_yn label default_yes =
   | "n" | "no" -> false
   | _ -> default_yes
 
-(* one prompt per plain string var: (env name, prompt label, default) *)
+(* one prompt per plain string var: (env name, prompt label, default, whether
+   to print a separating blank line first). POLYBAR_MONITOR_LAPTOP has no gap
+   since "Detected monitors" (if shown) already sits directly above its own
+   question. *)
 let monitor_var_specs =
-  [ ("POLYBAR_MONITOR_LAPTOP", "Laptop bar monitor", default_monitor_laptop)
-  ; ("POLYBAR_MOUNT1", "Second mountpoint (empty for none)", default_mount1)
-  ]
+  [ ( "POLYBAR_MONITOR_LAPTOP"
+    , "Laptop bar monitor"
+    , default_monitor_laptop
+    , false )
+  ; ( "POLYBAR_MOUNT1"
+    , "Second mountpoint (empty for none)"
+    , default_mount1
+    , true ) ]
 
 (* only asks about env vars the currently-selected bars actually reference,
    so a machine running only the laptop bar isn't asked about the desktop's
@@ -381,20 +389,22 @@ let configure_polybar_env relevant_vars =
         match list_monitors () with
         | [] -> ()
         | monitors ->
-            Printf.printf "Detected monitors: %s\n"
+            Printf.printf "\nDetected monitors: %s\n"
               (String.concat ", " monitors) ) ;
     let vars = read_env_file polybar_env in
     let vars =
       List.fold_left
-        (fun vars (key, label, default) ->
-          if List.mem key relevant_vars then
+        (fun vars (key, label, default, needs_gap) ->
+          if List.mem key relevant_vars then (
+            if needs_gap then print_newline () ;
             let current = Option.value (List.assoc_opt key vars) ~default in
-            set_var vars key (prompt_default label current)
+            set_var vars key (prompt_default label current) )
           else vars )
         vars monitor_var_specs
     in
     let vars =
-      if List.mem "POLYBAR_MODULES_RIGHT" relevant_vars then
+      if List.mem "POLYBAR_MODULES_RIGHT" relevant_vars then (
+        print_newline () ;
         let has_wifi =
           if not (has_wireless_interface ()) then (
             Printf.printf
@@ -416,7 +426,7 @@ let configure_polybar_env relevant_vars =
         let modules_right =
           if has_wifi then default_modules_right else modules_right_no_wifi
         in
-        set_var vars "POLYBAR_MODULES_RIGHT" modules_right
+        set_var vars "POLYBAR_MODULES_RIGHT" modules_right )
       else vars
     in
     write_env_file polybar_env vars ;
