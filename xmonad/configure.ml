@@ -328,27 +328,25 @@ let write_env_file path vars =
         vars )
 
 let prompt_default label default =
-  Printf.printf "%s [%s] (c to keep): %!" label default ;
+  Printf.printf "%s [%s] (c to keep, d to clear): %!" label default ;
   let input =
     try String.trim (input_line tty)
     with End_of_file -> print_newline () ; ""
   in
   match String.lowercase_ascii input with
   | "" | "c" | "continue" -> default
+  | "d" | "delete" -> ""
   | _ -> input
 
-let prompt_yn label default_yes =
-  let hint = if default_yes then "Y/n" else "y/N" in
-  Printf.printf "%s (%s): %!" label hint ;
-  let input =
-    try String.trim (String.lowercase_ascii (input_line tty))
-    with End_of_file -> print_newline () ; ""
-  in
-  match input with
-  | "" -> default_yes
-  | "y" | "yes" -> true
-  | "n" | "no" -> false
-  | _ -> default_yes
+(* a wireless network interface's directory under /sys/class/net always has a
+   "wireless" subdirectory — presence/absence is unambiguous, unlike a
+   monitor name, so there's nothing to ask the user *)
+let has_wireless_interface () =
+  try
+    Sys.readdir "/sys/class/net"
+    |> Array.exists (fun iface ->
+        Sys.file_exists (Printf.sprintf "/sys/class/net/%s/wireless" iface) )
+  with Sys_error _ -> false
 
 (* one prompt per plain string var: (env name, prompt label, default) *)
 let monitor_var_specs =
@@ -362,10 +360,13 @@ let monitor_var_specs =
 let configure_polybar_env relevant_vars =
   if relevant_vars = [] then
     Printf.printf "No polybar bars selected, skipping polybar.env.\n"
-  else
-    let monitors = list_monitors () in
-    if monitors <> [] then
-      Printf.printf "Detected monitors: %s\n" (String.concat ", " monitors) ;
+  else (
+    ( if List.mem "POLYBAR_MONITOR_LAPTOP" relevant_vars then
+        match list_monitors () with
+        | [] -> ()
+        | monitors ->
+            Printf.printf "Detected monitors: %s\n"
+              (String.concat ", " monitors) ) ;
     let vars = read_env_file polybar_env in
     let vars =
       List.fold_left
@@ -377,26 +378,19 @@ let configure_polybar_env relevant_vars =
         vars monitor_var_specs
     in
     let vars =
-      if List.mem "POLYBAR_MODULES_RIGHT" relevant_vars then
-        let current_has_wifi =
-          match List.assoc_opt "POLYBAR_MODULES_RIGHT" vars with
-          | Some modules -> (
-            try
-              ignore
-                (Str.search_forward (Str.regexp_string "wlan") modules 0) ;
-              true
-            with Not_found -> false )
-          | None -> true
-        in
-        let has_wifi = prompt_yn "This machine has wifi" current_has_wifi in
+      if List.mem "POLYBAR_MODULES_RIGHT" relevant_vars then (
+        let has_wifi = has_wireless_interface () in
+        Printf.printf "Wifi interface %s, %s wlan module.\n"
+          (if has_wifi then "detected" else "not detected")
+          (if has_wifi then "including" else "excluding") ;
         let modules_right =
           if has_wifi then default_modules_right else modules_right_no_wifi
         in
-        set_var vars "POLYBAR_MODULES_RIGHT" modules_right
+        set_var vars "POLYBAR_MODULES_RIGHT" modules_right )
       else vars
     in
     write_env_file polybar_env vars ;
-    Printf.printf "Saved %s\n" polybar_env
+    Printf.printf "Saved %s\n" polybar_env )
 
 let () =
   let config_text =
