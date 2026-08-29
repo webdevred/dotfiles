@@ -478,7 +478,7 @@ moveNonGames = do
   w <- ask
   ws <- liftX $ gets windowset
   let tag = W.currentTag ws
-  isGame w
+  (not <$> isGame w)
     <&&> pure (tag == "game")
     --> doShift "1"
 
