@@ -463,8 +463,8 @@ myConfig =
 doShiftDynamic :: WorkspaceId -> ManageHook
 doShiftDynamic ws = liftX (addHiddenWorkspace ws) >> doShift ws
 
-(=!^) :: Query String -> String -> Query Bool
-q =!^ prefix = fmap (not . isPrefixOf prefix) q
+(=!) :: Query String -> String -> Query Bool
+q =! prefix = fmap (== prefix) q
 
 (=^?) :: Query String -> String -> Query Bool
 q =^? prefix = fmap (isPrefixOf prefix) q
@@ -484,7 +484,7 @@ moveNonGames = do
 moveGames :: ManageHook
 moveGames = do
   w <- ask
-  className =!^ "steam" <&&> isGame w --> doShiftDynamic "game"
+  className =! "steam" <&&> isGame w --> doShiftDynamic "game"
 
 myManageHook :: ManageHook
 myManageHook =
@@ -496,6 +496,7 @@ myManageHook =
         <&&> (not <$> title =? "Steam")
         --> (hasBorder False <+> doRectFloat (W.RationalRect 0.1 0.1 0.2 0.8))
     , className =? "firefox" <&&> resource =? "Toolkit" --> doFullFloat
+    , className =? "steam" <&&> title =! "Steam" --> doFloat
     , moveNonGames
     , moveGames
     ]
