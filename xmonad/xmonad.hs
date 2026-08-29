@@ -469,6 +469,7 @@ q =! prefix = fmap (== prefix) q
 (=^?) :: Query String -> String -> Query Bool
 q =^? prefix = fmap (isPrefixOf prefix) q
 
+-- steam stuff
 isGame :: Window -> Query Bool
 isGame = fmap isJust . liftX . getProp32s "STEAM_GAME"
 
@@ -486,19 +487,29 @@ moveGames = do
   w <- ask
   className =! "steam" <&&> isGame w --> doShiftDynamic "game"
 
+-- special hook for MakeMKV because it does not set size request properly for some of its popups
+popupHook =
+  composeOne
+    [ title =? "MakeMKV BETA" <&&> isPopup -?> doFullFloat
+    , isDialog -?> doFloat
+    ]
+
+isPopup = do
+  w <- ask
+  wTypes <- liftX $ getProp32s "_NET_WM_WINDOW_TYPE" w
+  popupAtom <- liftX $ fromIntegral <$> getAtom "_NET_WM_WINDOW_TYPE_DIALOG"
+  pure (any (elem popupAtom) wTypes)
+
 myManageHook :: ManageHook
 myManageHook =
   composeAll
     [ className =? "mpv" --> (doFullFloat <+> doShift "1")
     , className =? "discord" --> doShift "2"
-    , className
-        =? "steam"
-        <&&> (not <$> title =? "Steam")
-        --> (hasBorder False <+> doRectFloat (W.RationalRect 0.1 0.1 0.2 0.8))
-    , className =? "firefox" <&&> resource =? "Toolkit" --> doFullFloat
-    , className =? "steam" <&&> title =! "Steam" --> doFloat
+    , className =? "firefox" <&&> appName =? "Toolkit" --> doFullFloat
+    , className =? "steam" <&&> title =! "Steam" --> hasBorder False <+> doFloat
     , moveNonGames
     , moveGames
+    , popupHook
     ]
     <+> namedScratchpadManageHook scratchpads
 
