@@ -1,3 +1,6 @@
+[[ -r /usr/share/git/git-prompt.sh ]] &&
+  . /usr/share/git/git-prompt.sh
+
 [[ -r /usr/share/bash-completion/bash_completion ]] &&
   . /usr/share/bash-completion/bash_completion
 
