@@ -6,16 +6,20 @@
 
 git-remove-orphaned-branches() {
   git -C "$PWD" rev-parse --is-inside-work-tree &>/dev/null || {
-    echo "Not a git repo: $PWD" >&2; return 1
+    echo "Not a git repo: $PWD" >&2
+    return 1
   }
 
   local dry=0
   [[ "$1" == "-n" || "$1" == "--dry-run" ]] && dry=1
 
   local default
-  default=$(git -C "$PWD" symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null \
-            | sed 's|^origin/||')
-  [[ -z "$default" ]] && { echo "Could not determine default branch." >&2; return 1; }
+  default=$(git -C "$PWD" symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null |
+    sed 's|^origin/||')
+  [[ -z "$default" ]] && {
+    echo "Could not determine default branch." >&2
+    return 1
+  }
 
   git -C "$PWD" fetch --prune --quiet
 
@@ -27,17 +31,17 @@ git-remove-orphaned-branches() {
       orphans+=("$branch")
     fi
   done < <(git -C "$PWD" for-each-ref \
-             --format='%(refname:short) %(upstream:track)' refs/heads \
-           | awk '/\[gone\]/ {print $1}')
+    --format='%(refname:short) %(upstream:track)' refs/heads |
+    awk '/\[gone\]/ {print $1}')
 
-  if (( ${#orphans[@]} == 0 )); then
+  if ((${#orphans[@]} == 0)); then
     echo "No orphaned local branches with unpushed changes."
     return 0
   fi
 
   printf 'Orphaned branches with unpushed changes:\n'
   printf '  %s\n' "${orphans[@]}"
-  (( dry )) && return 0
+  ((dry)) && return 0
 
   printf '\nDelete these? [y/N] '
   read -r confirm
