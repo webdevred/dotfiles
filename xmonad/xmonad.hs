@@ -490,15 +490,9 @@ moveGames = do
 -- special hook for MakeMKV because it does not set size request properly for some of its popups
 popupHook =
   composeOne
-    [ title =? "MakeMKV BETA" <&&> isPopup -?> doFullFloat
+    [ title =? "MakeMKV BETA" <&&> isDialog -?> doFullFloat
     , isDialog -?> doFloat
     ]
-
-isPopup = do
-  w <- ask
-  wTypes <- liftX $ getProp32s "_NET_WM_WINDOW_TYPE" w
-  popupAtom <- liftX $ fromIntegral <$> getAtom "_NET_WM_WINDOW_TYPE_DIALOG"
-  pure (any (elem popupAtom) wTypes)
 
 myManageHook :: ManageHook
 myManageHook =
