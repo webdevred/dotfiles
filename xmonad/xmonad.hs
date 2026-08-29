@@ -464,7 +464,7 @@ doShiftDynamic :: WorkspaceId -> ManageHook
 doShiftDynamic ws = liftX (addHiddenWorkspace ws) >> doShift ws
 
 (=!) :: Query String -> String -> Query Bool
-q =! prefix = fmap (== prefix) q
+q =! a = fmap (/= a) q
 
 (=^?) :: Query String -> String -> Query Bool
 q =^? prefix = fmap (isPrefixOf prefix) q
@@ -483,9 +483,7 @@ moveNonGames = do
     --> doShift "1"
 
 moveGames :: ManageHook
-moveGames = do
-  w <- ask
-  className =! "steam" <&&> isGame w --> doShiftDynamic "game"
+moveGames = className =! "steam" <&&> (ask >>= isGame) --> doShiftDynamic "game"
 
 -- special hook for MakeMKV because it does not set size request properly for some of its popups
 popupHook =
