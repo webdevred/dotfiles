@@ -16,7 +16,7 @@ import Data.Hashable
 import Data.Int (Int32)
 import Data.List (find, isPrefixOf, sortOn)
 import Data.Map (Map)
-import Data.Maybe (fromMaybe)
+import Data.Maybe (fromMaybe, isJust)
 import Data.Ord (Down (..))
 import Data.String (fromString)
 import Data.Text (Text)
@@ -463,8 +463,28 @@ myConfig =
 doShiftDynamic :: WorkspaceId -> ManageHook
 doShiftDynamic ws = liftX (addHiddenWorkspace ws) >> doShift ws
 
+(=!^) :: Query String -> String -> Query Bool
+q =!^ prefix = fmap (not . isPrefixOf prefix) q
+
 (=^?) :: Query String -> String -> Query Bool
 q =^? prefix = fmap (isPrefixOf prefix) q
+
+isGame :: Window -> Query Bool
+isGame = fmap isJust . liftX . getProp32s "STEAM_GAME"
+
+moveNonGames :: ManageHook
+moveNonGames = do
+  w <- ask
+  ws <- liftX $ gets windowset
+  let tag = W.currentTag ws
+  isGame w
+    <&&> pure (tag == "game")
+    --> doShift "1"
+
+moveGames :: ManageHook
+moveGames = do
+  w <- ask
+  className =!^ "steam" <&&> isGame w --> doShiftDynamic "game"
 
 myManageHook :: ManageHook
 myManageHook =
@@ -476,8 +496,8 @@ myManageHook =
         <&&> (not <$> title =? "Steam")
         --> (hasBorder False <+> doRectFloat (W.RationalRect 0.1 0.1 0.2 0.8))
     , className =? "firefox" <&&> resource =? "Toolkit" --> doFullFloat
-    , className =? "cs2" --> doShiftDynamic "game"
-    , className =^? "steam_app_" --> doShiftDynamic "game"
+    , moveNonGames
+    , moveGames
     ]
     <+> namedScratchpadManageHook scratchpads
 
