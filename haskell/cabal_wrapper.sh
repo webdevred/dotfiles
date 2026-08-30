@@ -30,4 +30,6 @@ if [ "$has_project_file" -eq 0 ] &&
   args+=("--project-file=${CABAL_PROJECT_DEV}")
 fi
 
+printf "arguments given to %s to %s: %s\n\n" "${REAL_CABAL}" "${0}" "${args[*]}" 1>&2
+
 exec "$REAL_CABAL" "${args[@]}"
