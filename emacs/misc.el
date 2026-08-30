@@ -234,7 +234,7 @@
                    try-dir (cl-find-if-not
                             (lambda (other-dir) (eq other-dir try-dir))
                             '(left right))))))
-    (if (or swap-other-dir (and (eq try-dir dir) (not (window-dedicated-p (window-in-direction dir)))))
+    (if (and (or swap-other-dir (and (eq try-dir dir))) (not (window-dedicated-p (window-in-direction dir))))
         (windmove-swap-states-in-direction dir))))
 
 (define-key windmove-mode-map (kbd "C-c C-s") (lambda () (interactive) (my-window-swap 'right t)))
