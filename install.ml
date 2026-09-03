@@ -92,11 +92,9 @@ let set_permissions source current_mode maybe_mode =
 
 let rec link_dotfile please_symlink maybe_mode source destination =
   let file_stat = stat source in
+  (* symlink the whole directory in one shot *)
   if file_stat.st_kind == S_DIR && please_symlink then (
-    if
-      (* symlink the whole directory in one shot *)
-      not (Sys.file_exists destination)
-    then (
+    if not (Sys.file_exists destination) then (
       let dest_dir = Filename.dirname destination in
       if not (Sys.file_exists dest_dir) then create_dir dest_dir ;
       Printf.printf "symlinking dir %s %s\n" source destination ;
