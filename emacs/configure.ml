@@ -2,7 +2,9 @@ open Unix
 
 (* derive src and dst from script location + dest_places.txt *)
 let script_dir = Filename.dirname Sys.argv.(0)
+
 let dotfiles_root = Filename.dirname script_dir
+
 let dir_name = Filename.basename script_dir
 
 let dst =
@@ -15,7 +17,8 @@ let dst =
   in
   List.find_map
     (fun line ->
-      if String.starts_with line ~prefix:"#" || String.trim line = "" then None
+      if String.starts_with line ~prefix:"#" || String.trim line = "" then
+        None
       else
         match String.split_on_char ':' line with
         | src :: dest :: _ when String.equal src dir_name ->
@@ -25,7 +28,9 @@ let dst =
   |> Option.get
 
 let extra_src = script_dir ^ "/extra"
+
 let extra_enabled_dst = dst ^ "/extra-enabled"
+
 let opt_dst = dst ^ "/opt"
 
 let run cmd =
@@ -41,9 +46,9 @@ let install_file file =
     else
       run
         (Printf.sprintf
-           "cd %s && git clone https://github.com/haskell/haskell-mode.git && \
-            cd haskell-mode && make"
-           opt_dst) ) ;
+           "cd %s && git clone https://github.com/haskell/haskell-mode.git \
+            && cd haskell-mode && make"
+           opt_dst ) ) ;
   if not (Sys.file_exists extra_enabled_dst) then
     Unix.mkdir extra_enabled_dst 0o700 ;
   let link_src = extra_src ^ "/" ^ file in

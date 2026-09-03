@@ -93,8 +93,10 @@ let set_permissions source current_mode maybe_mode =
 let rec link_dotfile please_symlink maybe_mode source destination =
   let file_stat = stat source in
   if file_stat.st_kind == S_DIR && please_symlink then (
-    (* symlink the whole directory in one shot *)
-    if not (Sys.file_exists destination) then (
+    if
+      (* symlink the whole directory in one shot *)
+      not (Sys.file_exists destination)
+    then (
       let dest_dir = Filename.dirname destination in
       if not (Sys.file_exists dest_dir) then create_dir dest_dir ;
       Printf.printf "symlinking dir %s %s\n" source destination ;
@@ -199,16 +201,15 @@ let perform_action action maybe_chosen_sources cwd places =
             let configure_ml = cwd ^ "/" ^ dir ^ "/configure.ml" in
             if Sys.file_exists configure_ml then (
               let cmd =
-                Printf.sprintf
-                  "ocaml -I +unix -I +str unix.cma str.cma %s"
+                Printf.sprintf "ocaml -I +unix -I +str unix.cma str.cma %s"
                   configure_ml
               in
               Printf.printf "configuring %s\n%!" dir ;
               match Unix.system cmd with
               | Unix.WEXITED 0 -> ()
               | Unix.WEXITED code ->
-                  Printf.eprintf "configuring %s failed with exit code %d\n%!"
-                    dir code
+                  Printf.eprintf
+                    "configuring %s failed with exit code %d\n%!" dir code
               | Unix.WSIGNALED _ | Unix.WSTOPPED _ ->
                   Printf.eprintf "configuring %s was killed\n%!" dir ) ) )
         chosen_places
