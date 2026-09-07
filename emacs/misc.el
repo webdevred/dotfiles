@@ -24,7 +24,8 @@
  '(ring-bell-function #'ignore)
  '(warning-minimum-level :error)
  '(require-final-newline t)
- '(js-indent-level 2))
+ '(js-indent-level 2)
+ '(use-dialog-box nil))
 
 (defun my/display-buffer-right-or-reuse (buffer alist)
   "Show BUFFER on the right side and run the body function in ALIST."
