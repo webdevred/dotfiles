@@ -35,7 +35,12 @@ let opt_dst = dst ^ "/opt"
 
 let run cmd =
   Printf.printf "$ %s\n%!" cmd ;
-  ignore (Unix.system cmd)
+  match Unix.system cmd with
+  | Unix.WEXITED 0 -> ()
+  | Unix.WEXITED code ->
+      Printf.eprintf "command failed with exit code %d: %s\n%!" code cmd
+  | Unix.WSIGNALED _ | Unix.WSTOPPED _ ->
+      Printf.eprintf "command was killed: %s\n%!" cmd
 
 let install_file file =
   if String.equal file "haskell-mode-git.el" then (
