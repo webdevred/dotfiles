@@ -31,13 +31,13 @@ let backup_regexp = Str.regexp {|.*\..*backup|}
 let user_regexp = Str.regexp {|^..-user-.*|}
 
 let rec mkdir_p dir =
-  if Sys.file_exists dir then
-    begin if not (Sys.is_directory dir) then
+  if Sys.file_exists dir then begin
+    if not (Sys.is_directory dir) then
       failwith
         (sprintf
            "%s already exists but is not a directory, remove it and retry"
            dir )
-    end
+  end
   else begin
     mkdir_p (Filename.dirname dir) ;
     try mkdir dir 0o755 with Unix_error (EEXIST, _, _) -> ()
